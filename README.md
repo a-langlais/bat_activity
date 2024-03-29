@@ -1,37 +1,36 @@
 # BatActivity : ensemble de fonctions utiles à l'analyse de l'activité des chauves-souris
 
-Ce projet regroupe un certain nombre de fonctions utiles pour l'analyse des données chiroptérologiques obtenus par protocole d'écoute active (hétérodyne) ou passive (via enregistreurs automatiques).
-**Il est en constante évolution au fur et à mesure des besoins et des problèmes rencontrés.**
+Ce projet regroupe un certain nombre de fonctions utiles pour l'analyse des données chiroptérologiques obtenues par protocole d'écoute active (hétérodyne) ou passive (via enregistreurs automatiques).
+**Il est en constante évolution au fur et à mesure des besoins et des problèmes rencontrés. De plus, il est ouvert à la contribution, c'est un projet 100% open-source.**
 
-Il propose par ailleurs un format standard de table à utiliser pour les données chiroptérologiques, facilitant l'analyse et les comparaisons. Il est indispensable de suivre ce format standard pour le bon fonctionnement des scripts.
+Il propose par ailleurs un format standard de tableau à utiliser pour les données chiroptérologiques, facilitant l'analyse et les comparaisons. Il est indispensable de suivre ce format standard pour le bon fonctionnement des fonctions.
 
-Il s'agit de plusieurs fonctions sans prétention, que j'utilisais dans le cadre de mes analyses en tant que chiroptérologue. Les fonctions calculent le nombre de contacts, le nombre de minutes positives, d'heures positives et les différents paramètres des contacts par heure (CPH) et contacts par nuit (CPN). Concernant les données actives, le script montre le nombre de CPH estimé (calculé sur une heure) et les proportions des trois comportements qualifiés ('Transit' pour un comportement de déplaçement, 'Chasse' pour un comportement de chasse et 'Social' pour un cri social).
+Il s'agit de plusieurs fonctions que j'utilise dans le cadre de mes analyses en tant que chiroptérologue. Les fonctions calculent le nombre de contacts, le nombre de minutes positives, d'heures positives et les différents paramètres des contacts par heure (CPH) et contacts par nuit (CPN). Concernant les données actives, la fonction montre le nombre de CPH estimé (calculé sur une heure) et les proportions des trois comportements qualifiés ('Transit' pour un comportement de déplacement, 'Chasse' pour un comportement de chasse et 'Social' pour un cri à caractère social).
 
-La fonction **`TableFormatage()`** convertit un tableau de sortie Tadarida ou Sonochiro en un format standard pour l'utilisation des scripts.
+La fonction **`TableFormatage()`** convertit un tableau de sortie Tadarida ou Sonochiro en un format standard pour l'utilisation des scripts. La fonction renvoie un tableau.
 
 ```R
 # Pour convertir un tableau de sortie SonoChiro
 data <- TableFormatage(table = resultats_brut_sonochiro, sftw = "SonoChiro")
 # Pour convertir un tableau de sortie Tadarida
 data <- TableFormatage(table = resultats_brut_tadarida, sftw = "Tadarida")
-
 ```
 
-La fonction **`BatActive()`** prend en arguments : le tableau standard, la durée des points en minutes et le nombre de points réalisés.
+La fonction **`BatActive()`** prend en arguments : le tableau standard, la durée des points en minutes et le nombre de points réalisés. La fonction renvoie un tableau.
 
 ```R
 # Pour une session de 6 points d'écoute de 10 minutes
 results <- BatActive(table = data, duration = 10, npoint = 6)>
 ```
 
-La fonction **`SpeciesPlaceActivity()`** prend en arguments : le tableau standard, le nombre de nuits enregsitrées, et l'heure de début et de fin dans un vecteur.
+La fonction **`SpeciesPlaceActivity()`** prend en arguments : le tableau standard, le nombre de nuits enregsitrées, et l'heure de début et de fin dans un vecteur. La fonction renvoie un tableau.
 
 ```R
 # Pour une session d'une nuit enregsitrée de 22:00 à 06:00
 results <- SpeciesPlaceActivity(data = data, nights = 1, record_time = c("22:00", "06:00"))
 ```
 
-La fonction **`list.renamer()`** prend en argument une liste de fichiers *.wav.
+La fonction **`list.renamer()`** prend en argument une liste de fichiers *.wav. La fonction renomme directement les fichiers du répértoire.
 
 ```R
 setwd() # répértoire du script
@@ -39,8 +38,57 @@ files <- list.files(pattern = ".wav", ignore.case = TRUE)
 list.renamer(files)
 ```
 
-D'autres scripts permettent de réaliser des visualisations graphiques pertinentes pour aider à l'analyse, notamment la visualisation des seuils de bridage pour les parcs éoliens et les analyses sur mât de mesure en prenant en compte la température et la vitesse du vent.
+La fonction **`print_Signal()`** ne prend pas d'argument et permet de sélectionner un fichier *.csv de sortie d'un test micro étendu d'un TeensyRecorder pour en afficher la courbe de signal résultante.
 
+```py
+print_Signal()
+```
+
+D'autres scripts permettent de réaliser diverses opérations comme visualiser les seuils de bridage en fonction de la température et de la vitesse du vent.
+
+### Tableaux standards
+
+Le format standard des tableaux est indispensable pour la bonne réalisation des fonctions et pour s'assurer que les données saisies sont bien de qualité. Si vous êtes passés par un logiciel de clustering automatique comme Sonochiro ou la plateforme Tadarida, vous pouvez utiliser la sortie de ces logiciels pour le convertir en un tableau standard avec la fonction `TableFormatage()`. Pour le moment, tous les titres sont en anglais mais bientôt les fonctions prendront en charge des titres de colonnes en français et en anglais.
+
+Concernant les données de protocole d'écoute passive, un tableau exemple bien saisi et prêt à l'utilisation est présenté comme ci-dessous : ![](C:\Users\langl\AppData\Roaming\marktext\images\2024-03-29-10-21-10-image.png)
+
+où : 
+
+- `File` est le nom du fichier son enregistré.
+
+- `Place` est l'identifiant du point d'écoute.
+
+- `Id` est le nom de l'espèce identifiée.
+
+- `Night_Date` est la date de la nuit de l'enregistrement.
+
+- `Date_Time` est la date et l'heure précise de l'enregistrement.
+
+- `Date`, `Year`, `Month`, `Week`, `Day`, `Time`, `Hour` et `Minute` sont les décompositions de la date de l'enregistrement.
+
+
+
+Pour les données de protocole d'écoute active, un tableau exemple bien saisi est comme ci-dessous :
+
+![](C:\Users\langl\AppData\Roaming\marktext\images\2024-03-29-10-25-44-image.png)
+
+ où :
+
+- `File_name` est le nom du fichier son enregistré (s'il y a eu).
+
+- `Id` est le nom de l'espèce identifiée.
+
+- `Activity` est la qualification du comportement dominant du contact ('Transit' pour du déplacement, 'Chasse' pour un buzz de chasse et 'Social' pour un comportement social).
+
+- `Place` est l'identifiant du point d'écoute.
+
+- `Year`, `Month`, `Day`, `Hour` et `Minute` sont les décompositions de la date de l'enregistrement.
+
+- `Date` est la date civile du contact.
+
+- `Time` est l'heure du contact.
+
+- `Night_Date` est la date de la nuit de l'enregistrement.
 
 ### Prérequis
 
@@ -51,6 +99,7 @@ Le script est écrit pour être exécuté dans l'environnement R. Vous devez avo
 ```R
 R --version
 ```
+
 Si R n'est pas installé, vous pouvez le télécharger et l'installer depuis CRAN.
 
 Ensuite, vous pouvez cloner le dépôt sur votre machine locale via votre méthode préférée ou en utilisant la commande suivante :
