@@ -40,7 +40,7 @@ list.renamer(files)
 
 La fonction **`print_Signal()`** ne prend pas d'argument et permet de sélectionner un fichier *.csv de sortie d'un test micro étendu d'un TeensyRecorder pour en afficher la courbe de signal résultante.
 
-```py
+```R
 print_Signal()
 ```
 
