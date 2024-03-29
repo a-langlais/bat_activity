@@ -48,46 +48,32 @@ D'autres scripts permettent de réaliser diverses opérations comme visualiser l
 
 ### Tableaux standards
 
-Le format standard des tableaux est indispensable pour la bonne réalisation des fonctions et pour s'assurer que les données saisies sont bien de qualité. Si vous êtes passés par un logiciel de clustering automatique comme Sonochiro ou la plateforme Tadarida, vous pouvez utiliser la sortie de ces logiciels pour le convertir en un tableau standard avec la fonction `TableFormatage()`. Pour le moment, tous les titres sont en anglais mais bientôt les fonctions prendront en charge des titres de colonnes en français et en anglais.
+Le format standard des tableaux est indispensable pour la bonne réalisation des fonctions et pour s'assurer que les données saisies soient de bonne qualité. De plus, cela facilite la concaténation si vous souhaitez réaliser une base de données. 
+Si vous êtes passés par un logiciel de clustering automatique comme Sonochiro ou la plateforme Tadarida, vous pouvez utiliser la sortie de ces logiciels pour le convertir en un tableau standard avec la fonction `TableFormatage()`. Pour le moment, tous les titres sont en anglais mais bientôt les fonctions prendront en charge des titres de colonnes en français et en anglais.
 
-Concernant les données de protocole d'écoute passive, un tableau exemple bien saisi et prêt à l'utilisation est présenté comme ci-dessous : ![](C:\Users\langl\AppData\Roaming\marktext\images\2024-03-29-10-21-10-image.png)
+Concernant les données de protocole d'écoute passive, un tableau exemple bien saisi et prêt à l'utilisation est présenté comme ci-dessous : 
+![passive](https://github.com/a-langlais/bat_activity/assets/160505900/55bfbf2c-0441-479d-a4a2-a0f848aa8bb5)
 
-où : 
 
 - `File` est le nom du fichier son enregistré.
-
 - `Place` est l'identifiant du point d'écoute.
-
 - `Id` est le nom de l'espèce identifiée.
-
 - `Night_Date` est la date de la nuit de l'enregistrement.
-
 - `Date_Time` est la date et l'heure précise de l'enregistrement.
-
 - `Date`, `Year`, `Month`, `Week`, `Day`, `Time`, `Hour` et `Minute` sont les décompositions de la date de l'enregistrement.
-
-
 
 Pour les données de protocole d'écoute active, un tableau exemple bien saisi est comme ci-dessous :
 
-![](C:\Users\langl\AppData\Roaming\marktext\images\2024-03-29-10-25-44-image.png)
+![active](https://github.com/a-langlais/bat_activity/assets/160505900/7f79bfc1-af9c-4e9f-b7f8-4bfbdbbcf8b7)
 
- où :
-
+ 
 - `File_name` est le nom du fichier son enregistré (s'il y a eu).
-
 - `Id` est le nom de l'espèce identifiée.
-
 - `Activity` est la qualification du comportement dominant du contact ('Transit' pour du déplacement, 'Chasse' pour un buzz de chasse et 'Social' pour un comportement social).
-
 - `Place` est l'identifiant du point d'écoute.
-
 - `Year`, `Month`, `Day`, `Hour` et `Minute` sont les décompositions de la date de l'enregistrement.
-
 - `Date` est la date civile du contact.
-
 - `Time` est l'heure du contact.
-
 - `Night_Date` est la date de la nuit de l'enregistrement.
 
 ### Prérequis
