@@ -19,11 +19,10 @@
 #               ex : SpeciesPlaceActivity(data = MaTable, nights = 1, record_time = c("22:00", "06:00"))
 # =======================================================================================
 
-# ======== PACKAGES ==============
-library(dplyr)
-library(lubridate)
-
 SpeciesPlaceActivity <- function(data, nights = 1, record_time = c("22:00", "06:00")) {
+  
+  library(dplyr)
+  library(lubridate)
   
   # Vérifier la présence des colonnes nécessaires
   required_columns <- c("Place", "Id", "Night_Date", "Date_Time", "Year", "Month", "Week", "Day", "Time", "Hour", "Minute")

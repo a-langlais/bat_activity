@@ -49,7 +49,7 @@ print_Signal <- function(){
   # Création du graphique
   library(ggplot2)
   
-  ggplot(df, aes(x = Canaux)) +
+  graph <- ggplot(df, aes(x = Canaux)) +
     geom_line(aes(y = Signal, color = "Signal")) +
     geom_line(aes(y = Gabarit.Min, color = "Gabarit Min")) +
     geom_line(aes(y = Gabarit.Max, color = "Gabarit Max")) +
@@ -61,4 +61,5 @@ print_Signal <- function(){
   
   # Message de sortie
   print(paste("Graphique du", title, "produit avec succès."))
+  return(graph)
 }

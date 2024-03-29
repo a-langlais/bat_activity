@@ -17,10 +17,10 @@
 #               La fonction retourne un tableau récapitulatif de l'activité.
 # =======================================================================================
 
-# ======== PACKAGES ==============
-library(dplyr)
 
 BatActive <- function(table, duration, npoint) {
+  
+  library(dplyr)
   
   # Vérification des types d'entrées
   if (!is.data.frame(table)) {
