@@ -39,8 +39,6 @@ La fonction **`calculate_threshold()`** prend en arguments : le tableau standard
 ```r
 # Pour calculer l'influence des variables abiotiques sur les contacts de chauves-souris sur la période juin-juillet avec un souhait de conserver 95% de l'activité
 calculate_threshold(data = data, meteo = meteo, dates = c("01-06-2018", "31-07-2018"), var= c("Speed", "Temperature"), percent = 95, plot = TRUE)
-
-
 ```
 
 La fonction **`list.renamer()`** prend en argument une liste de fichiers *.wav. La fonction renomme directement les fichiers du répértoire.
@@ -107,12 +105,11 @@ git clone https://github.com/a-langlais/BatActivity.git
 
 ### Dépendances
 
-Les scripts nécessitent les packages suivants : dplyr, ggplot2, lubridate, ks, et suncalc. Pour les installer, lancez R ou RStudio et exécutez les commandes suivantes :
+Les scripts nécessitent les packages suivants : dplyr, ggplot2, lubridate, et suncalc. Pour les installer, lancez R ou RStudio et exécutez les commandes suivantes :
 
 ```R
 install.packages("dplyr")
 install.packages("ggplot2")
-install.packages("ks")
 install.packages("lubridate")
 install.packages("suncalc")
 ```
