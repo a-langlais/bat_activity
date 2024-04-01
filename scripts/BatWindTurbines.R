@@ -1,106 +1,128 @@
 # =======================================================================================
-# Titre: Bridage Ã©olien multivariÃ© pour les chauves-souris
-# Description: Ce script R permet d'afficher un graphique de l'activitÃ© chiroptÃ©rologique 
-#              en fonction des valeurs abiotiques (tempÃ©rature, vitesse du vent) et 
-#              dÃ©termine par KDE les seuils les plus performants pour rÃ©aliser un bridage 
-#              Ã©olien couvrant 95% minimum de l'activitÃ©
-#
+# Titre: Calcul des métriques de bridage optimales pour un projet éolien
+# Description: Ce script R permet de réaliser une analyse multivariée des des données abiotiques
+#              en fonction des contacts de chauves-souris afin de calculer les mesures de bridage
+#              les plus adaptées.
 # Auteur: Alexandre LANGLAIS
-# Date: 2020/11/02
-# Version: 1
+# Date: 2024/04/01
+# Version: 1.1
 # GitHub : https://github.com/a-langlais/bat_activity
-# Dï¿½pendances: dplyr, ggplot2, ks, lubridate
+# Dépendances: ggplot2, lubridate
 # =======================================================================================
 
-library(ggplot2)
-library(ks)
-library(lubridate)
-library(dplyr)
-
-results$Date <- dmy(results$Date)
-results$Night_Date <- dmy(results$Night_Date)
-results$Time <- format(results$Time, format = "%H:%M")
-meteo$Date.Time <- dmy_hm(meteo$Date.Time)
-
-# Creation colonne Date_Time
-results$Date_Time <- paste(results$Date, results$Time)
-results$Date_Time <- format(results$Date_Time, format = "%Y-%m-%d %H:%M")
-results$Date_Time <- as.POSIXct(results$Date_Time)
-results$Date.Time <- ceiling_date(results$Date_Time, unit = "10 minutes")
-
-table <- results[which(results$Height == "0"),] # tous les enregistrements en hauteur
-table <- results[which(results$Height == "0" & 
-                         results$Night_Date >= "2018-06-15" & results$Night_Date <= "2018-09-15"),]  # changer les dates selon besoin
-                        # enregistrements en hauteur lors de la pÃ©riode estivale 
-
-table <- table[, c("Id","Date.Time")]
-
-table <- merge(table, meteo[,c(1, 6, 7)], by = "Date.Time")
-colnames(table) <- c("Date.Time", "Id", "Speed","Temp")
-table <- na.omit(table)
-summary(table)
-
-kd <- kde(table[, c(3,4)], compute.cont = TRUE, adj.positive = TRUE)
-
-
-# =======================
-# =======================
-
-contour <- with(kd, contourLines(x = eval.points[[1]], y = eval.points[[2]], z = estimate, levels = cont["5%"])[[1]])
-contour <- data.frame(contour)
-
-IC <- "5%"
-Max_windspeed <- max(contour$x) # x maximum
-Min_temp <- ifelse(min(contour$y) < "0", 0, min(contour$y)) # y minimum
-avoid_contacts <- nrow(table[table$Speed <= Max_windspeed & table$Temp >= Min_temp,])
-avoid_percent <- (avoid_contacts/nrow(table))*100
-speed_restriction <- data.frame(IC, Max_windspeed, Min_temp, avoid_contacts, avoid_percent)
-
-for (i in 2:99){
-  IC <- paste(i, "%", sep = "")
-  contour <- with(kd, contourLines(x = eval.points[[1]], y = eval.points[[2]], z = estimate, levels = cont[IC])[[1]])
-  contour <- data.frame(contour)
-  #
-  Max_windspeed <- max(contour$x)
-  Min_temp <- ifelse(min(contour$y) < "0", 0, min(contour$y))
-  avoid_contacts <- nrow(table[table$Speed <= max(contour$x) & table$Temp >= min(contour$y),])
-  avoid_percent <- avoid_contacts/nrow(table)*100
-  row.temp <- data.frame(IC, Max_windspeed, Min_temp, avoid_contacts, avoid_percent) 
-  speed_restriction <- bind_rows(speed_restriction, row.temp)
+calculate_seuils <- function(contacts, meteo, dates = NULL, variables, percent = 95, plot = FALSE) {
+  library(lubridate)
+  library(ggplot2)
+  
+  # Gestion des erreurs
+  if(!is.null(dates) && length(dates) != 2) {
+    stop("L'argument 'dates' doit être un vecteur de longueur 2.")
+  }
+  
+  if(!is.numeric(pourcentage) || pourcentage < 0 || pourcentage > 100) {
+    stop("L'argument 'pourcentage' doit être un nombre entre 0 et 100.")
+  }
+  
+  if(!all(variables %in% names(meteo))) {
+    stop("Toutes les 'variables' doivent être présentes dans 'meteo'.")
+  }
+  
+  if(any(sapply(c(contacts$Date_Time, meteo$Date_Time), function(dt) is.na(dmy_hm(dt)[1])))) {
+    stop("Une ou plusieurs dates ne sont pas dans le format attendu ou ne peuvent pas être converties.")
+  }
+  
+  if(nrow(donneesFusionnees) == 0) {
+    stop("La fusion des données a produit un ensemble de données vide. Vérifiez les plages de dates et les formats.")
+  }
+  
+  if(any(is.na(coefficients))) {
+    warning("Des coefficients du modèle sont NA, ce qui peut indiquer un problème avec les données ou le modèle.")
+  }
+  
+  if(plot) {
+    missing_vars <- !variables %in% names(donneesFusionnees)
+    if(any(missing_vars)) {
+      warning("Les variables suivantes manquent dans les données fusionnées et seront ignorées dans le graphique :", 
+              paste(variables[missing_vars], collapse = ", "))
+      plot <- FALSE # Désactiver le plot si les données nécessaires manquent
+    }
+  }
+  
+  # Convertir les colonnes de date en POSIXct
+  contacts$Date_Time <- dmy_hm(contacts$Date_Time)
+  meteo$Date_Time <- dmy_hm(meteo$Date_Time)
+  contacts$Date_Time <- ceiling_date(contacts$Date_Time, unit = "10 minutes")
+  
+  # Filtrer les données si des dates sont fournies
+  if (!is.null(dates) && length(dates) == 2) {
+    date_start <- dmy(dates[1])
+    date_end <- dmy(dates[2])
+    contacts <- contacts[contacts$Date_Time >= date_start & contacts$Date_Time <= date_end, ]
+    meteo <- meteo[meteo$Date_Time >= date_start & meteo$Date_Time <= date_end, ]
+  }
+  
+  # Garder la période nocturne
+  meteo <- meteo[hour(meteo$Date_Time) >= 20 | hour(meteo$Date_Time) < 6, ]
+  
+  # Fusionner les données sur la base de la date et de l'heure
+  data_merged <- merge(contacts, meteo, by = "Date_Time", all = TRUE)
+  
+  # Créer la colonne 'is_contacted' pour indiquer la présence ou l'absence de contact
+  data_merged$is_contacted <- ifelse(!is.na(data_merged$Id), 1, 0)
+  
+  # Calcul des percentiles pour les variables spécifiées
+  percentiles_list <- sapply(variables, function(var) {
+    # Calcul des quantiles pour le percent spécifié et son inverse
+    probs <- c(percent / 100, 1 - (percent / 100))
+    quantiles <- quantile(data_merged[[var]], probs = probs, na.rm = TRUE)
+    
+    # Retourne une liste contenant les deux quantiles pour chaque variable
+    list(
+      Percentile = quantiles[1],
+      InversePercentile = quantiles[2]
+    )}, simplify = FALSE)
+  
+  # Transformer la liste en dataframe pour une manipulation facile
+  percentiles_df <- do.call(rbind, lapply(names(percentiles_list), function(var) {
+    data.frame(
+      Variable = var,
+      Percentile = percentiles_list[[var]]$Percentile,
+      InversePercentile = percentiles_list[[var]]$InversePercentile
+    )
+  }))
+  
+  gc()
+  # Construction du modèle de régression logistique
+  model <- as.formula(paste("is_contacted ~", paste(variables, collapse = " + ")))
+  modele <- glm(model, data = data_merged, family = binomial(link = "logit"))
+  gc()
+  
+  # Extraction des métriques du modèle
+  coefficients <- summary(modele)$coefficients
+  resultats <- data.frame(
+    Variable = rownames(coefficients),
+    Coefficient = coefficients[,1],
+    ErreurStandard = coefficients[,2],
+    zValue = coefficients[,3],
+    PValue = coefficients[,4]
+  )
+  
+  # Ajout des percentiles
+  resultats <- merge(resultats, percentiles_df, by = "Variable", all.x = TRUE)
+  
+  # Générer les graphiques si demandé
+  if (plot) {
+    for (var in variables) {
+      p <- ggplot(data_merged, aes_string(x = var, y = "is_contacted")) +
+        geom_point(alpha = 0.5) +
+        geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE, color = "red") +
+        labs(title = paste("Contact des chauves-souris vs", var),
+             x = var,
+             y = "Probabilité de contact") +
+        theme_minimal()
+      print(p)
+    }
+  }
+  
+  return(resultats)
 }
-rm(Min_temp, Max_windspeed, IC, avoid_contacts, avoid_percent, i, row.temp, contour, kd)
-write.table(speed_restriction, "Bridage-2d.csv", row.names = FALSE, col.names = TRUE, dec = ",", sep = ";")
-
-# =======================
-# =======================
-
-# Intervalles minimum pour eviter 95% des contacts les plus probables
-#
-kd <- kde(table[, c(3,4)], compute.cont = TRUE, adj.positive = TRUE)
-contour <- with(kd, contourLines(x = eval.points[[1]], y = eval.points[[2]], z = estimate, levels = cont["5%"])[[1]])
-contour <- data.frame(contour)
-
-Max_windspeed <- max(contour$x) # x maximum
-Min_temp <- ifelse(min(contour$y) < "0", 0, min(contour$y)) # y minimum
-nrow(table[table$Speed <= max(contour$x) & table$Temp >= min(contour$y),]) # nombre de contacts evites
-nrow(table[table$Speed <= max(contour$x) & table$Temp >= min(contour$y),])/nrow(table)*100 # pourcentage total evite
-
-# representation graphique des intervalles
-#
-IntGraph <- ggplot(data = table, aes(Speed, Temp))
-IntGraph <- IntGraph + geom_point(alpha = 0.2, colour = "black")
-IntGraph <- IntGraph + geom_point(data = , alpha = 0.2, colour = "red")
-# IntGraph <- IntGraph + geom_path(aes(x, y), data = contour, colour = "blue")
-# IntGraph <- IntGraph + stat_density2d(aes(fill = ..density..), geom = "tile", contour = FALSE, n = 200)
-#
-IntGraph <- IntGraph + geom_hline(yintercept = Min_temp, data = contour, linetype = "dashed", colour = "red")
-IntGraph <- IntGraph + annotate("text", x = min(table$Speed), y = min(contour$y), label = round(Min_temp, digits = 4), colour = "red", vjust = -0.5)
-IntGraph <- IntGraph + geom_vline(xintercept = Max_windspeed, data = contour, linetype = "dashed",  colour = "red")
-IntGraph <- IntGraph + annotate("text", x = max(contour$x), y = max(table$Temp), label = round(Max_windspeed, digits = 4), colour = "red", hjust = -0.1, vjust = 1)
-#
-IntGraph <- IntGraph + annotate("rect", xmin = 0, xmax = Max_windspeed, ymin = Min_temp, ymax = Inf, alpha = 0.2, fill = "blue")
-
-IntGraph <- IntGraph + theme_bw()
-# IntGraph <- IntGraph + theme(legend.position = "none", panel.background = element_blank())
-IntGraph
-
