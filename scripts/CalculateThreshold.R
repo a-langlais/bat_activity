@@ -10,7 +10,7 @@
 # Dépendances: ggplot2, lubridate
 # =======================================================================================
 
-calculate_threshold <- function(data, meteo, dates = NULL, var, percent = 95, plot = FALSE) {
+CalculateThreshold <- function(data, meteo, dates = NULL, var, percent = 95, plot = FALSE) {
   library(lubridate)
   library(ggplot2)
   
