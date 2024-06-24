@@ -53,7 +53,7 @@ CalculateThreshold <- function(data, meteo, dates = NULL, var, percent = 95, plo
   
   # Fusionner les donn?es sur la base de la date et de l'heure
   data_merged <- merge(data, meteo, by = "Date_Time", all = TRUE)
-
+  
   if(plot) {
     missing_vars <- !var %in% names(data_merged)
     if(any(missing_vars)) {
@@ -117,13 +117,12 @@ CalculateThreshold <- function(data, meteo, dates = NULL, var, percent = 95, plo
   
   # G?n?rer les graphiques si demand?
   if (plot) {
-    data_to_plot <- na.omit(data_merged)  # Filtrage des données NA
-    for (var in var) {
-      p <- ggplot(data_to_plot, aes(x = !!sym(var), y = "is_contacted")) +
+    for (var_name in var) {
+      p <- ggplot(data_merged, aes_string(x = var_name, y = "is_contacted")) +
         geom_point(alpha = 0.5) +
         geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE, color = "red") +
-        labs(title = paste("Contact des chauves-souris vs", var),
-             x = var,
+        labs(title = paste("Contact des chauves-souris vs", var_name),
+             x = var_name,
              y = "Probabilité de contact") +
         theme_minimal()
       print(p)
