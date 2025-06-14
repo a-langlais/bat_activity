@@ -69,8 +69,8 @@ ui <- fluidPage(
                  uiOutput("col_select_ui_passifs"),
                  selectInput("place_passifs", "Lieu le plus proche", 
                              choices = c("Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Brest", "Strasbourg")),
-                 selectInput("date_format_passifs", "Format de date",
-                             choices = c("%Y-%m-%d" = "%Y-%m-%d", "%d/%m/%Y" = "%d/%m/%Y", "%m/%d/%Y" = "%m/%d/%Y")),
+                 # selectInput("date_format_passifs", "Format de date",
+                 #             choices = c("%Y-%m-%d" = "%Y-%m-%d", "%d/%m/%Y" = "%d/%m/%Y", "%m/%d/%Y" = "%m/%d/%Y")),
                  radioButtons("time_option", "Choisir le mode de saisie de l'heure:",
                               choices = c("Heure fixe" = "fixed", "Relatif au coucher du soleil" = "sunset")),
                  
@@ -83,7 +83,7 @@ ui <- fluidPage(
                  conditionalPanel(
                    condition = "input.time_option == 'sunset'",
                    numericInput("minutes_before_sunset", "Minutes avant le coucher du soleil", value = 30, min = 0),
-                   numericInput("minutes_after_sunset", "Minutes après le coucher du soleil", value = 30, min = 0)
+                   numericInput("minutes_after_sunrise", "Minutes après le lever du soleil", value = 30, min = 0)
                  ),
                  
                  actionButton("run_analysis_passifs", "Lancer l’analyse"),
@@ -194,8 +194,88 @@ server <- function(input, output, session) {
   
   ####### Points passifs #######
   
-  # à coder
-
+  raw_data_passifs <- reactive({
+    read_data(input$csv_file_passifs)
+  })
+  
+  output$file_status_passifs <- renderText({
+    if (is.null(input$csv_file_passifs)) return("Aucun fichier chargé.")
+    if (is.null(raw_data_passifs())) return("Erreur lors de la lecture du fichier.")
+    paste0("Fichier chargé avec ", nrow(raw_data_passifs()), " lignes et ", ncol(raw_data_passifs()), " colonnes.")
+  })
+  
+  output$col_select_ui_passifs <- renderUI({
+    req(raw_data_passifs())
+    cols <- names(raw_data_passifs())
+    
+    tagList(
+      selectInput("col_place_passifs", "Colonne : Point", choices = cols),
+      selectInput("col_id_passifs", "Colonne : Espèce", choices = cols),
+      selectInput("col_date_passifs", "Colonne : Date de la nuit", choices = cols),
+      selectInput("col_time_passifs", "Colonne : Date et Heure de l'enregistrement", choices = cols)
+    )
+  })
+  
+  output$preview_data_passifs <- renderTable({
+    head(raw_data_passifs())
+  })
+  
+  df_passifs_renamed <- eventReactive(input$run_analysis_passifs, {
+    req(raw_data_passifs())
+    raw_data_passifs() %>%
+      rename(
+        Place = all_of(input$col_place_passifs),
+        Id = all_of(input$col_id_passifs),
+        Night_Date = all_of(input$col_date_passifs),
+        Date_Time = all_of(input$col_time_passifs)
+      )
+  })
+  
+  analysis_result_passifs <- eventReactive(input$run_analysis_passifs, {
+    df <- df_passifs_renamed()
+    
+    if (input$time_option == "fixed") {
+      record_time <- c(input$start_time, input$end_time)
+      sun_offsets <- NULL
+    } else {
+      record_time <- NULL
+      sun_offsets <- c(before_sunset = input$minutes_before_sunset,
+                       after_sunrise = input$minutes_after_sunrise)
+    }
+    
+    BatPassive(
+      data = df,
+      city = input$place_passifs,
+      record_time = record_time,
+      sun_offsets = sun_offsets
+    )
+  })
+  
+  output$analysis_output_passifs <- renderTable({
+    analysis_result_passifs()
+  })
+  
+  output$download_ui_passifs <- renderUI({
+    req(analysis_result_passifs())
+    downloadButton("download_indicateurs_passifs", "Télécharger les résultats (.csv)", class = "btn-success")
+  })
+  
+  output$download_indicateurs_passifs <- downloadHandler(
+    filename = function() {
+      paste0("indicateurs_passifs_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      req(analysis_result_passifs())
+      write.csv(analysis_result_passifs(), file, row.names = FALSE)
+    }
+  )
+  
+  output$passive_plot <- renderPlotly({
+    req(analysis_result_passifs())
+    plot_passive_activity(analysis_result_passifs())
+  })
+  
 }
+
   
 shinyApp(ui, server)
