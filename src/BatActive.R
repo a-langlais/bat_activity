@@ -20,7 +20,7 @@
 
 BatActive <- function(table, duration, npoint) {
   
-  library(dplyr)
+  library(dplyr)  # 1.1.4
   
   # Vérification des types d'entrées
   if (!is.data.frame(table)) {stop("L'argument 'table' doit Dtre un dataframe.")}

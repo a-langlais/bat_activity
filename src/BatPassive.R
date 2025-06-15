@@ -26,10 +26,11 @@ BatPassive <- function(data,
                        city = "Paris",
                        record_time = c("22:00", "06:00"), 
                        sun_offsets = NULL) {
-  library(dplyr)
-  library(lubridate)
-  library(suncalc)
-  library(tibble)
+  
+  library(dplyr)      # 1.1.4
+  library(lubridate)  # 1.9.4
+  library(suncalc)    # 0.5.1
+  library(tibble)     # 3.2.1
   
   # Table interne des villes avec coordonnées
   cities_coords <- tibble(

@@ -17,9 +17,9 @@
 # =======================================================================================
 
 # Import des packages
-library(plotly)
-library(dplyr)
-library(lubridate)
+library(plotly)     # 4.10.4
+library(dplyr)      # 1.1.4
+library(lubridate)  # 1.9.4
 
 # Piechart des proportions d'activité
 plot_behavior_pie <- function(indicateurs_df) {
