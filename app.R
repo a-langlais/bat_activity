@@ -19,17 +19,26 @@
 #               sommaires d'autre part. Le tableau est exportable au format .csv.
 # =======================================================================================
 
+# ======================================================================
+# CHARGEMENT DES RESSOURCES
+# ======================================================================
+
+# Import des packages
 library(shiny)    # 1.10.0
 library(readr)    # 2.1.5
 library(dplyr)    # 1.1.4
 library(here)     # 1.0.1
-library(plotly)   # pour les graphiques interactifs
+library(plotly)   # 4.10.4
 
-# Chargement des fonctions personnalisées
+# Chargement des fonctions
 setwd(here())
 source("src/BatActive.R")
 source("src/BatPlots.R")
 source("src/BatPassive.R")  # Assure-toi d'avoir cette fonction pour les passifs
+
+# ======================================================================
+# INTERFACE UI
+# ======================================================================
 
 ui <- fluidPage(
   titlePanel("🦇 Analyse d'activité des chauves-souris"),
@@ -42,7 +51,7 @@ ui <- fluidPage(
                sidebarPanel(
                  fileInput("csv_file_actifs", "Charger un fichier CSV (Points actifs)", accept = ".csv"),
                  uiOutput("col_select_ui_actifs"),
-                 numericInput("duration_actifs", "Durée d'enregistrement (en minutes)", value = 10, min = 1),
+                 numericInput("duration_actifs", "Durée d'écoute (en minutes)", value = 10, min = 1),
                  numericInput("npoint_actifs", "Nombre de points d'observation", value = 5, min = 1),
                  actionButton("run_analysis_actifs", "Lancer l’analyse"),
                  tags$div(style = "margin-top: 15px;", uiOutput("download_ui_actifs"))
@@ -69,8 +78,6 @@ ui <- fluidPage(
                  uiOutput("col_select_ui_passifs"),
                  selectInput("place_passifs", "Lieu le plus proche", 
                              choices = c("Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Brest", "Strasbourg")),
-                 # selectInput("date_format_passifs", "Format de date",
-                 #             choices = c("%Y-%m-%d" = "%Y-%m-%d", "%d/%m/%Y" = "%d/%m/%Y", "%m/%d/%Y" = "%m/%d/%Y")),
                  radioButtons("time_option", "Choisir le mode de saisie de l'heure:",
                               choices = c("Heure fixe" = "fixed", "Relatif au coucher du soleil" = "sunset")),
                  
@@ -103,6 +110,10 @@ ui <- fluidPage(
   )
 )
 
+# ======================================================================
+# BACKEND SERVER
+# ======================================================================
+
 server <- function(input, output, session) {
   
   ####### Fonction de lecture #######
@@ -121,7 +132,9 @@ server <- function(input, output, session) {
     })
   }
   
-  ####### Points actifs #######
+  #######
+  ####### Points actifs
+  #######
   
   raw_data_actifs <- reactive({
     read_data(input$csv_file_actifs)
@@ -192,7 +205,9 @@ server <- function(input, output, session) {
     plot_species_bar(df_actifs_renamed())
   })
   
-  ####### Points passifs #######
+  #######
+  ####### Points passifs
+  #######
   
   raw_data_passifs <- reactive({
     read_data(input$csv_file_passifs)
@@ -211,10 +226,23 @@ server <- function(input, output, session) {
     tagList(
       selectInput("col_place_passifs", "Colonne : Point", choices = cols),
       selectInput("col_id_passifs", "Colonne : Espèce", choices = cols),
-      selectInput("col_date_passifs", "Colonne : Date de la nuit", choices = cols),
-      selectInput("col_time_passifs", "Colonne : Date et Heure de l'enregistrement", choices = cols)
+      selectInput("col_night_date_passifs", "Colonne : Date de la nuit (YYYY-MM-DD)", choices = cols),
+      radioButtons("time_choice", "Choix :", 
+                   choices = list("Date_Time" = "datetime", 
+                                  "Date et Heure séparées" = "separate"),
+                   selected = "datetime"),
+      conditionalPanel(
+        condition = "input.time_choice == 'datetime'",
+        selectInput("col_time_passifs", "Colonne : Date et Heure (YYYY-MM-DD HH:MM)", choices = cols)
+      ),
+      conditionalPanel(
+        condition = "input.time_choice == 'separate'",
+        selectInput("col_date_passifs", "Colonne : Date (YYYY-MM-DD)", choices = cols),
+        selectInput("col_time_passifs", "Colonne : Heure (HH:MM)", choices = cols)
+      )
     )
   })
+    
   
   output$preview_data_passifs <- renderTable({
     head(raw_data_passifs())
@@ -222,12 +250,33 @@ server <- function(input, output, session) {
   
   df_passifs_renamed <- eventReactive(input$run_analysis_passifs, {
     req(raw_data_passifs())
-    raw_data_passifs() %>%
+    
+    df <- raw_data_passifs()
+    
+    # Créer Date_Time selon le choix de l'utilisateur
+    df$Date_Time <- if (input$time_choice == "separate") {
+      req(input$col_date_passifs, input$col_time_passifs)
+      
+      # Combiner les colonnes Date + Time
+      datetime_str <- paste(df[[input$col_date_passifs]], df[[input$col_time_passifs]])
+      tryCatch({
+        as.POSIXct(datetime_str, format = "%d/%m/%Y %H:%M") # A modifier en %Y-%m-%d %H:%M
+      }, error = function(e) {
+        showNotification("Erreur lors de la conversion Date + Heure", type = "error")
+        rep(NA, nrow(df))
+      })
+    } else {
+      req(input$col_time_passifs)
+      as.POSIXct(df[[input$col_time_passifs]], format = "%d/%m/%Y %H:%M") # A modifier en %Y-%m-%d %H:%M
+    }
+    
+    # Renommer les autres colonnes
+    df <- df %>%
       rename(
         Place = all_of(input$col_place_passifs),
         Id = all_of(input$col_id_passifs),
-        Night_Date = all_of(input$col_date_passifs),
-        Date_Time = all_of(input$col_time_passifs)
+        Night_Date = all_of(input$col_night_date_passifs)
+        # Date_Time déjà gérée manuellement plus haut
       )
   })
   
@@ -271,11 +320,14 @@ server <- function(input, output, session) {
   )
   
   output$passive_plot <- renderPlotly({
-    req(analysis_result_passifs())
-    plot_passive_activity(analysis_result_passifs())
+    req(df_passifs_renamed())
+    plot_passive_activity(df_passifs_renamed(), input$col_id_passifs)
   })
-  
+
 }
 
-  
+# ======================================================================
+# APPLICATION
+# ======================================================================
+
 shinyApp(ui, server)
