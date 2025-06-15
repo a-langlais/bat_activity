@@ -79,7 +79,7 @@ ui <- fluidPage(
                  selectInput("place_passifs", "Lieu le plus proche", 
                              choices = c("Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Brest", "Strasbourg")),
                  radioButtons("time_option", "Choisir le mode de saisie de l'heure:",
-                              choices = c("Heure fixe" = "fixed", "Relatif au coucher du soleil" = "sunset")),
+                              choices = c("Heures fixes" = "fixed", "Relatif aux éphémerides" = "sunset")),
                  
                  conditionalPanel(
                    condition = "input.time_option == 'fixed'",
@@ -228,7 +228,7 @@ server <- function(input, output, session) {
       selectInput("col_id_passifs", "Colonne : Espèce", choices = cols),
       selectInput("col_night_date_passifs", "Colonne : Date de la nuit (YYYY-MM-DD)", choices = cols),
       radioButtons("time_choice", "Choix :", 
-                   choices = list("Date_Time" = "datetime", 
+                   choices = list("Date et Heure" = "datetime", 
                                   "Date et Heure séparées" = "separate"),
                    selected = "datetime"),
       conditionalPanel(
