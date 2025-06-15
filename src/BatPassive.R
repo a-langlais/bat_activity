@@ -1,3 +1,27 @@
+# =======================================================================================
+# Titre: Fonction BatPassive - Analyse des données d'activité chiroptérologique passive
+# Description:  Fonction R destinée à analyser les données d'enregistrement passif d'activité
+#               chiroptérologique. Elle traite un jeu de données contenant les enregistrements horaires,
+#               calcule des indicateurs d'activité nocturne (contacts, occurrences par heure, etc.) 
+#               en prenant en compte la localisation géographique et la période d'enregistrement.
+#
+# Auteur: Alexandre LANGLAIS
+# Date: 2025/06/15
+# Version: 1.0
+# GitHub : https://github.com/a-langlais/bat_activity
+# Dépendances: dplyr, lubridate, suncalc, tibble
+#
+# Paramètres:
+#   - data : data.frame ou tibble contenant les données d'activité avec colonnes obligatoires 
+#            (Place, Id, Night_Date, Date_Time)
+#   - city : caractère, nom de la ville pour les coordonnées géographiques (par défaut "Paris")
+#   - record_time : vecteur de 2 chaînes "HH:MM" définissant la plage horaire d'enregistrement 
+#                   fixe si aucun offset n'est donné (par défaut c("22:00", "06:00"))
+#   - sun_offsets : liste ou vecteur nommé avec décalages en minutes (before_sunset, after_sunrise) 
+#                   pour calculer dynamiquement la période nocturne selon le coucher et lever du soleil
+#
+# =======================================================================================
+
 BatPassive <- function(data, 
                        city = "Paris",
                        record_time = c("22:00", "06:00"), 
