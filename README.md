@@ -148,3 +148,7 @@ install.packages("suncalc")
 install.packages("tibble")
 ```
 
+## License
+
+Ce projet est sous licence [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).  
+Vous pouvez l'utiliser, le partager, l'adapter seulement pour une utilisation non-commerciale.
