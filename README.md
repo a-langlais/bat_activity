@@ -87,8 +87,8 @@ Pour les données de protocole d'écoute active, un tableau exemple bien saisi e
 
 ### Application Shiny
 
-<p float="middle">
-  <img src="images/BatActive-GIF.gif" width="80%" />
+<p>
+  <center><img src="images/BatApp.png" width="80%" /></center>
 </p>
 
 Pour faciliter l’analyse et la visualisation des données, notamment lorsque les jeux de données sont complexes, atypiques ou contiennent des noms de colonnes spécifiques, une application Shiny a été développée.
