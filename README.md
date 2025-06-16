@@ -3,7 +3,7 @@
 ### Présentation
 
 Ce projet regroupe un certain nombre de fonctions utiles pour l'analyse des données chiroptérologiques obtenues par protocole d'écoute active (hétérodyne) ou passive (via enregistreurs automatiques).
-**Il est en constante évolution au fur et à mesure des besoins et des problèmes rencontrés. De plus, il est ouvert à la contribution, c'est un projet 100% open-source.**
+**Il est en constante évolution au fur et à mesure des besoins et des problèmes rencontrés. De plus, il est ouvert à la contribution**
 
 Il propose par ailleurs un format standard de tableau à utiliser pour les données chiroptérologiques, facilitant l'analyse et les comparaisons. Il est indispensable de suivre ce format standard pour le bon fonctionnement des fonctions.
 
@@ -85,6 +85,28 @@ Pour les données de protocole d'écoute active, un tableau exemple bien saisi e
 - `Time` est l'heure du contact.
 - `Night_Date` est la date de la nuit de l'enregistrement.
 
+### Application Shiny
+
+<p align="center">
+  <img src="images/BatApp.png" width="80%" />
+</p>
+
+Pour faciliter l’analyse et la visualisation des données, notamment lorsque les jeux de données sont complexes, atypiques ou contiennent des noms de colonnes spécifiques, une application Shiny a été développée.
+
+Cette interface conviviale permet :
+    * Une sélection interactive des données : Choix des colonnes pertinentes selon la structure du fichier importé, évitant ainsi les erreurs de saisie ou d’incohérences.
+    * Un paramétrage dynamique des analyses : Par exemple, la possibilité de sélectionner une ville dans une liste déroulante, pour adapter automatiquement les calculs liés à l’environnement (lever et coucher du soleil) grâce à des coordonnées géographiques associées.
+    * Une visualisation graphique interactive avec plotly (ou ggplot2) pour explorer les activités au fil du temps, avec des superpositions d’événements naturels (comme le lever et le coucher du soleil calculés avec suncalc).
+    * Une meilleure compréhension des données grâce à des graphiques clairs, interactifs et ajustés au contexte choisi.
+
+Cette application vise ainsi à réduire les erreurs de manipulation, à offrir une exploration intuitive des données, et à rendre accessible à tous les utilisateurs, même non spécialistes, une analyse fine et standardisée.
+
+Pour lancer l'application Shiny, assurez-vous d'avoir installé R ainsi que les dépendances nécessaires. Ensuite, lancez l'application en exécutant le script principal :
+```r
+install.packages(c("shiny", "plotly", "suncalc"))
+runApp("~/bat_activity/app.R")
+```
+
 ### Prérequis
 
 Avant d'installer et d'exécuter le script, vous devez vous assurer que votre système dispose de R et des packages R nécessaires. Voici les étapes pour vérifier et installer les prérequis :
@@ -113,3 +135,20 @@ install.packages("ggplot2")
 install.packages("lubridate")
 install.packages("suncalc")
 ```
+
+Pour l'application :
+```R
+install.packages("shiny")
+install.packages("readr")
+install.packages("here")
+install.packages("dplyr")
+install.packages("plotly")
+install.packages("lubridate")
+install.packages("suncalc")
+install.packages("tibble")
+```
+
+## License
+
+Ce projet est sous licence [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).  
+Vous pouvez l'utiliser, le partager, l'adapter seulement pour une utilisation non-commerciale.
