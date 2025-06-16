@@ -34,7 +34,7 @@ library(plotly)   # 4.10.4
 setwd(here())
 source("src/app/BatActive.R")
 source("src/app/BatPlots.R")
-source("src/app/BatPassive.R")  # Assure-toi d'avoir cette fonction pour les passifs
+source("src/app/BatPassive.R")
 
 # ======================================================================
 # INTERFACE UI
@@ -122,7 +122,7 @@ server <- function(input, output, session) {
     tryCatch({
       data_raw <- read_delim(file_input$datapath, delim = ";", show_col_types = FALSE)
       
-      # Convertir toutes les colonnes de type caractère en UTF-8 propre
+      # Convertir toutes les colonnes de type caractère en UTF-8
       data_clean <- data_raw %>%
         dplyr::mutate(across(where(is.character), ~iconv(., from = "UTF-8", to = "UTF-8", sub = "")))
       

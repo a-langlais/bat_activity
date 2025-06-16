@@ -101,10 +101,9 @@ plot_passive_activity <- function(data, col_id) {
   # Définir ticks x : dates uniques triées
   x_ticks <- sort(unique(data$Date))
   
-  # Labels x : format "janvier 2018" en français
-  # Pour forcer la locale en français temporairement
+  # Labels x : format "janvier 2018" (en fr)
   old_locale <- Sys.getlocale("LC_TIME")
-  Sys.setlocale("LC_TIME", "fr_FR.UTF-8")  # ou "French_France" sur Windows
+  Sys.setlocale("LC_TIME", "fr_FR.UTF-8")
   
   x_labels <- format(x_ticks, "%B %Y")
   
