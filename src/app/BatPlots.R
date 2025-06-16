@@ -84,11 +84,12 @@ plot_passive_activity <- function(data, col_id) {
   # Extraire date et heure numérique continue
   data <- data %>%
     mutate(
-      Date = as.Date(Date_Time),
+      Date = as.Date(Date_Time, format = "%Y-%m-%d"),
       Heure_num = hour(Date_Time) + minute(Date_Time)/60 + second(Date_Time)/3600,
       # Décaler les heures avant 18h pour avoir un continuum 18h-18h+24h
       Heure_num = ifelse(Heure_num < 18, Heure_num + 24, Heure_num)
-    )
+    ) %>%
+    arrange(Date)
   
   # Définir ticks et labels pour l'axe y (heure)
   y_ticks <- seq(18, 42, by = 2)
@@ -114,7 +115,7 @@ plot_passive_activity <- function(data, col_id) {
   n_colors <- length(unique(data[[col_id]]))
   palette_colors <- grDevices::rainbow(n_colors)
   
-  # Créer le scatter plot avec axes inversés
+  # Créer le scatterplot
   p <- plot_ly(
     data = data,
     x = ~Date,
@@ -125,7 +126,7 @@ plot_passive_activity <- function(data, col_id) {
     colors = palette_colors,
     marker = list(size = 8),
     text = ~paste0(col_id, ": ", get(col_id),
-                   "<br>Date: ", Date,
+                   "<br>Date: ", format(Date, format = "%Y-%m-%d"),
                    "<br>Heure: ", format(Date_Time, "%H:%M")),
     hoverinfo = "text",
     height = 600
@@ -134,7 +135,7 @@ plot_passive_activity <- function(data, col_id) {
       title = "Activité enregistrée en fonction du temps",
       xaxis = list(
         title = "Date",
-        type = "category"
+        type = "date"
       ),
       yaxis = list(
         title = "Heure",
