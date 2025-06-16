@@ -32,9 +32,9 @@ library(plotly)   # 4.10.4
 
 # Chargement des fonctions
 setwd(here())
-source("src/BatActive.R")
-source("src/BatPlots.R")
-source("src/BatPassive.R")  # Assure-toi d'avoir cette fonction pour les passifs
+source("src/app/BatActive.R")
+source("src/app/BatPlots.R")
+source("src/app/BatPassive.R")  # Assure-toi d'avoir cette fonction pour les passifs
 
 # ======================================================================
 # INTERFACE UI
@@ -250,8 +250,8 @@ server <- function(input, output, session) {
   
   df_passifs_renamed <- eventReactive(input$run_analysis_passifs, {
     req(raw_data_passifs())
-    
     df <- raw_data_passifs()
+    as.POSIXct(df[[input$col_night_date_passifs]], format = "%Y-%m-%d")
     
     # Créer Date_Time selon le choix de l'utilisateur
     df$Date_Time <- if (input$time_choice == "separate") {
@@ -260,14 +260,14 @@ server <- function(input, output, session) {
       # Combiner les colonnes Date + Time
       datetime_str <- paste(df[[input$col_date_passifs]], df[[input$col_time_passifs]])
       tryCatch({
-        as.POSIXct(datetime_str, format = "%d/%m/%Y %H:%M") # A modifier en %Y-%m-%d %H:%M
+        as.POSIXct(datetime_str, format = "%Y-%m-%d %H:%M")
       }, error = function(e) {
         showNotification("Erreur lors de la conversion Date + Heure", type = "error")
         rep(NA, nrow(df))
       })
     } else {
       req(input$col_time_passifs)
-      as.POSIXct(df[[input$col_time_passifs]], format = "%d/%m/%Y %H:%M") # A modifier en %Y-%m-%d %H:%M
+      as.POSIXct(df[[input$col_time_passifs]], format = "%Y-%m-%d %H:%M")
     }
     
     # Renommer les autres colonnes
