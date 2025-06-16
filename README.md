@@ -35,7 +35,7 @@ bat_activity/
 ├── LICENSE                   # Licence du projet (CC0-1.0)
 ├── README.md                 # Documentation principale du projet
 ├── app.R                     # Application Shiny 
-├── packagesRequirements.txt  # Script d'installation des dépendances
+├── packagesRequirements.R  # Script d'installation des dépendances
 ```
 
 ###  Lancer l’application Shiny
