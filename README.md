@@ -127,7 +127,7 @@ git clone https://github.com/a-langlais/BatActivity.git
 
 ### Dépendances
 
-Les scripts nécessitent les packages suivants : dplyr, ggplot2, lubridate, et suncalc. Pour les installer, lancez R ou RStudio et exécutez les commandes suivantes :
+Pour installer les dépendances, lancez R ou RStudio et exécutez les commandes suivantes :
 
 ```R
 install.packages("dplyr")
@@ -147,6 +147,8 @@ install.packages("lubridate")
 install.packages("suncalc")
 install.packages("tibble")
 ```
+
+❗ Vous pouvez aussi directement executer le script `packagesRequirements.R` qui vérifiera et installera automatiquement les bonnes versions des packages nécessaires.
 
 ## License
 
