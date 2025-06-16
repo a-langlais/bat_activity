@@ -7,9 +7,7 @@
 [![Shiny App](https://img.shields.io/badge/Shiny-App-blueviolet)](https://github.com/a-langlais/bat_activity)
 [![Last Update](https://img.shields.io/github/last-commit/a-langlais/bat_activity)](https://github.com/a-langlais/bat_activity/commits/main)
 
----
-
-## ✨ Présentation de l’application
+## Présentation de l’application
 
 <p align="center">
   <img src="images/BatApp.png" width="80%" alt="Aperçu de l'application Shiny"/>
@@ -24,16 +22,30 @@ L'application Shiny permet :
 - 📊 Des visualisations graphiques interactives avec `plotly` ou `ggplot2`  
 - 👥 Une meilleure accessibilité aux analyses, même pour les non-spécialistes
 
-### ▶️ Lancer l’application Shiny
+## Organisation du repo
+
+```bash
+bat_activity/
+├── data/                     # Données d'entrée et exemples
+├── images/                   # Images utilisées
+├── output/                   # Résultats générés par les scripts
+├── src/                      # Scripts indépendants
+│   └── app/                  # scripts utilisés par l'app Shiny
+├── .gitignore                # Fichiers et répertoires à ignorer par Git
+├── LICENSE                   # Licence du projet (CC0-1.0)
+├── README.md                 # Documentation principale du projet
+├── app.R                     # Application Shiny 
+├── packagesRequirements.txt  # Script d'installation des dépendances
+```
+
+###  Lancer l’application Shiny
 
 ```r
 install.packages(c("shiny", "plotly", "suncalc"))
 runApp("~/bat_activity/app.R")
 ```
 
----
-
-## 🧩 Fonctions principales
+## Fonctions principales
 
 Les scripts restent utilisables sans l'obligation systématique de passer par l'application.
 
@@ -48,8 +60,6 @@ data <- TableFormatage(table = resultats_brut_sonochiro, sftw = "SonoChiro")
 data <- TableFormatage(table = resultats_brut_tadarida, sftw = "Tadarida")
 ```
 
----
-
 ### `BatActive()`
 Calcule les indicateurs d’activité par point pour des écoutes actives (richesse spécifique, nombre de contacts, contacts par heure estimé et proportion de chaque activité observée).
 
@@ -57,8 +67,6 @@ Calcule les indicateurs d’activité par point pour des écoutes actives (riche
 # Exemple : 6 points de 10 min
 results <- BatActive(table = data, duration = 10, npoint = 6)
 ```
-
----
 
 ### `SpeciesPlaceActivity()`
 Analyse l’activité passive par espèce, lieu et période horaire (nombre de contacts, nombre de nuits, heures et minutes positives, nombre de contacts par nuit et nombre de contact par heure).
@@ -69,8 +77,6 @@ Analyse l’activité passive par espèce, lieu et période horaire (nombre de c
 # Exemple : 1 nuit de 22:00 à 06:00
 results <- SpeciesPlaceActivity(data = data, nights = 1, record_time = c("22:00", "06:00"))
 ```
-
----
 
 ### `CalculateThreshold()`
 Calcule des seuils de bridage selon variables météo (ex : température, vent).
@@ -86,8 +92,6 @@ CalculateThreshold(
 )
 ```
 
----
-
 ### `list.renamer()`
 Renomme automatiquement les fichiers .wav dans un répertoire.
 
@@ -97,8 +101,6 @@ files <- list.files(pattern = ".wav", ignore.case = TRUE)
 list.renamer(files)
 ```
 
----
-
 ### `print_Signal()`
 Affiche la courbe de signal d’un test micro de TeensyRecorder. Pour obtenir le fichier *.txt en question, suivre la procédure de test micro étendu des TeensyRecorders.
 
@@ -106,9 +108,7 @@ Affiche la courbe de signal d’un test micro de TeensyRecorder. Pour obtenir le
 print_Signal()
 ```
 
----
-
-## 📁 Format des tableaux standards
+## Format des tableaux standards
 
 ### Écoute passive
 
@@ -119,8 +119,6 @@ Colonnes clés :
 - `File`, `Place`, `Id`
 - `Night_Date`, `Date_Time`, `Date`, `Year`, `Month`, `Week`, `Day`, `Time`, `Hour`, `Minute`
 
----
-
 ### Écoute active
 
 ![active](https://github.com/a-langlais/bat_activity/assets/160505900/7f79bfc1-af9c-4e9f-b7f8-4bfbdbbcf8b7)
@@ -130,9 +128,7 @@ Colonnes clés :
 - `File_name`, `Id`, `Activity`, `Place`
 - `Date`, `Night_Date`, `Time`, `Year`, `Month`, `Day`, `Hour`, `Minute`
 
----
-
-## 📦 Installation
+## Installation
 
 ### 1. Cloner le dépôt
 
@@ -148,9 +144,7 @@ R --version
 
 > 📌 Requiert R ≥ 3.6.0
 
----
-
-## 📚 Dépendances
+## Dépendances
 
 ### Fonctionnalités générales :
 
@@ -164,22 +158,14 @@ install.packages(c("dplyr", "ggplot2", "lubridate", "suncalc"))
 install.packages(c("shiny", "readr", "here", "plotly", "tibble"))
 ```
 
-Pour vous faciliter la tâche, il est possible de lancer le script `packageRequirements.R` qui installera automatiquement les dépendances aux bonnes versions :
+❗**Pour vous faciliter la tâche, il est possible de lancer le script `packagesRequirements.R` qui installera automatiquement les dépendances aux bonnes versions**❗
 
-```r
-source("packagesRequirements.R")
-```
-
----
-
-## 🤝 Contributions
+## Contributions
 
 Ce projet est ouvert à la contribution !  
 Si vous êtes chiroptérologue, data scientist ou simplement curieux, vos retours, issues ou pull requests sont les bienvenus.
 
----
-
-## 📝 Licence
+## Licence
 
 Ce projet est sous licence **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)**.  
 Vous pouvez le partager, l’adapter et l’utiliser **à des fins non commerciales**, en mentionnant l’auteur original.
