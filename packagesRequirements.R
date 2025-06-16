@@ -51,5 +51,8 @@ for (pkg in names(required_packages)) {
   }
 }
 
+# Information sur la version de R installée
+print(R.version.string)
+
 # Chargement explicite des packages après vérification
 invisible(lapply(names(required_packages), library, character.only = TRUE))
