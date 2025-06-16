@@ -13,7 +13,7 @@
 #
 # Instructions: Exécuter ce script avant toute analyse ou déploiement pour s'assurer
 #               que l'environnement contient les bonnes versions des bibliothèques.
-#               Adapté pour des workflows reproductibles, notamment avec Shiny.
+#               Adapté pour des workflows reproductibles.
 # =======================================================================================
 
 # Liste des packages et versions requises
@@ -23,6 +23,7 @@ required_packages <- list(
   dplyr     = "1.1.4",    # manipulation de données
   here      = "1.0.1",    # gestion des chemins relatifs
   plotly    = "4.10.4",   # graphiques interactifs
+  ggplot2   = "3.5.2",    # graphiques basiques
   lubridate = "1.9.4",    # gestion des dates
   suncalc   = "0.5.1",    # calcul des données solaires
   tibble    = "3.2.1"     # tableaux allégés
