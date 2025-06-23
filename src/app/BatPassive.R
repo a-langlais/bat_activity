@@ -6,8 +6,8 @@
 #               en prenant en compte la localisation géographique et la période d'enregistrement.
 #
 # Auteur: Alexandre LANGLAIS
-# Date: 2025/06/15
-# Version: 1.0
+# Date: 2025/06/23
+# Version: 1.1
 # GitHub : https://github.com/a-langlais/bat_activity
 # Dépendances: dplyr, lubridate, suncalc, tibble
 #
