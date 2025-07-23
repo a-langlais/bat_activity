@@ -27,6 +27,7 @@
 library(shiny)    # 1.10.0
 library(readr)    # 2.1.5
 library(dplyr)    # 1.1.4
+library(tidyr)    # 1.3.1
 library(here)     # 1.0.1
 library(plotly)   # 4.10.4
 
