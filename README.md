@@ -160,7 +160,7 @@ R --version
 ### Fonctionnalités générales :
 
 ```r
-install.packages(c("dplyr", "ggplot2", "lubridate", "suncalc"))
+install.packages(c("dplyr", "tidyr", "ggplot2", "lubridate", "suncalc"))
 ```
 
 ### Application Shiny :
