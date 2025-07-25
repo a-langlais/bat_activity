@@ -4,8 +4,7 @@
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![R version](https://img.shields.io/badge/R-%3E=3.6.0-blue.svg)](https://cran.r-project.org/)
-[![Shiny App](https://img.shields.io/badge/Shiny-App-blueviolet)](https://github.com/a-langlais/bat_activity)
-[![](https://img.shields.io/badge/Shiny-shinyapps.io-447099"?style=flat&labelColor=white&logo=Posit&logoColor=447099")](https://a-langlais.shinyapps.io/bat_activity/)
+[![Shiny App](https://img.shields.io/badge/Shiny-App-blueviolet)](https://a-langlais.shinyapps.io/bat_activity/)
 [![Last Update](https://img.shields.io/github/last-commit/a-langlais/bat_activity)](https://github.com/a-langlais/bat_activity/commits/main)
 
 ## Présentation de l’application
@@ -25,7 +24,7 @@ L'application Shiny permet :
 
 L'application est directement accessible sur votre navigateur web via ShinyApps : https://a-langlais.shinyapps.io/bat_activity
 
-> **[!IMPORTANT]**  
+> **⚠️ IMPORTANT:**  
 > Toutes les données traitées par l'application sont exclusivement utilisées de manière instantanée. Aucune donnée n'est sauvegardée, stockée ou visible par un tiers. Chaque session est totalement indépendante et les informations sont supprimées dès que la session est terminée. Vous pouvez ainsi utiliser l'application en toute sécurité, sans craindre la conservation de vos données.
 
 ## Organisation du repo
