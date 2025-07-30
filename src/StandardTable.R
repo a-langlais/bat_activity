@@ -1,16 +1,16 @@
 # =======================================================================================
-# Titre: Analyse de l'Activit� Chiropt�rologique
+# Titre: Analyse de l'Activité Chiroptérologique
 # Description: Ce script R permet de retourner un tableau d'analyse au format standard 
-#              compatible avec les autres fonctions BatActivity � partir d'une sortie 
+#              compatible avec les autres fonctions BatActivity à partir d'une sortie 
 #              SonoChiro ou Tadarida (en anglais).
 #
 # Auteur: Alexandre LANGLAIS
-# Date: 2022/10/03
-# Version: 1.1
+# Date: 2025/07/30
+# Version: 1.2
 # GitHub : https://github.com/a-langlais/bat_activity
-# D�pendances: aucune
+# Dépendances: aucune
 #
-# Instructions: Ce script d�finit une fonction TableFormatage qui retourne un tableau 
+# Instructions: Ce script définit une fonction TableFormatage qui retourne un tableau 
 #               standard.
 # =======================================================================================
 
@@ -18,24 +18,28 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   #  
   if(sftw == "Tadarida"){
     File <- table$nom.du.fichier
-    Place <- as.character(substr(table$File, 25, 29))
-    Year <- as.character(substr(table$File, 31, 34))
-    Month <- as.character(substr(table$File, 35, 36))
-    Day <- as.character(substr(table$File, 37, 38))
-    Hour <- as.character(substr(table$File, 40, 41))
-    Minute <- as.character(substr(table$File, 42, 43))
+    Place <- substr(File, 25, nchar(File)-20)
     Id <- ifelse(table$observateur_taxon == "", table$tadarida_taxon, table$observateur_taxon)
+    
+    DateTime <- substr(File, nchar(File)-18, nchar(File)-1)
+    Year <- substr(DateTime, 1, 4)
+    Month <- substr(DateTime, 5, 6)
+    Day <- substr(DateTime, 7, 8)
+    Hour <- substr(DateTime, 10, 11)
+    Minute <- substr(DateTime, 12, 13)
   }
   #
   if(sftw == "SonoChiro"){
     File <- table$File
-    Place <- as.character(substr(table$File, 1, 5))
-    Year <- as.character(substr(table$File, 7, 10))
-    Month <- as.character(substr(table$File, 11, 12))
-    Day <- as.character(substr(table$File, 13, 14))
-    Hour <- as.character(substr(table$File, 16, 17))
-    Minute <- as.character(substr(table$File, 18, 19))
+    Place <- substr(File, 1, nchar(File)-20)
     Id <- table$Id
+    
+    DateTime <- substr(File, nchar(File)-18, nchar(File)-1)
+    Year <- substr(DateTime, 1, 4)
+    Month <- substr(DateTime, 5, 6)
+    Day <- substr(DateTime, 7, 8)
+    Hour <- substr(DateTime, 10, 11)
+    Minute <- substr(DateTime, 12, 13)
   }
   #
   Night_Date <- ""
