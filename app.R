@@ -138,6 +138,7 @@ server <- function(input, output, session) {
   #######
   
   raw_data_actifs <- reactive({
+    req(input$csv_file_actifs)
     read_data(input$csv_file_actifs)
   })
   
@@ -165,11 +166,9 @@ server <- function(input, output, session) {
   df_actifs_renamed <- eventReactive(input$run_analysis_actifs, {
     req(raw_data_actifs())
     raw_data_actifs() %>%
-      rename(
-        Place = all_of(input$col_place_actifs),
-        Id = all_of(input$col_id_actifs),
-        Activity = all_of(input$col_activity_actifs)
-      )
+      rename_with(~ ifelse(. != input$col_place_actifs, "Place", .), all_of(input$col_place_actifs)) %>%
+      rename_with(~ ifelse(. != input$col_id_actifs, "Id", .), all_of(input$col_id_actifs)) %>%
+      rename_with(~ ifelse(. != input$col_activity_actifs, "Activity", .), all_of(input$col_activity_actifs))
   })
   
   analysis_result_actifs <- eventReactive(input$run_analysis_actifs, {
@@ -211,6 +210,7 @@ server <- function(input, output, session) {
   #######
   
   raw_data_passifs <- reactive({
+    req(input$csv_file_passifs)
     read_data(input$csv_file_passifs)
   })
   
@@ -243,7 +243,6 @@ server <- function(input, output, session) {
       )
     )
   })
-    
   
   output$preview_data_passifs <- renderTable({
     df <- head(raw_data_passifs())
@@ -276,13 +275,11 @@ server <- function(input, output, session) {
     
     # Renommer les autres colonnes
     df <- df %>%
-      rename(
-        Place = all_of(input$col_place_passifs),
-        Id = all_of(input$col_id_passifs),
-        Night_Date = all_of(input$col_night_date_passifs)
-      )
+      rename_with(~ ifelse(. != input$col_place_passifs, "Place", .), all_of(input$col_place_passifs)) %>%
+      rename_with(~ ifelse(. != input$col_id_passifs, "Id", .), all_of(input$col_id_passifs)) %>%
+      rename_with(~ ifelse(. != input$col_night_date_passifs, "Night_Date", .), all_of(input$col_night_date_passifs))
     
-    df
+    return(df)  # Retourner le dataframe modifié
   })
   
   analysis_result_passifs <- eventReactive(input$run_analysis_passifs, {
@@ -328,7 +325,7 @@ server <- function(input, output, session) {
     req(df_passifs_renamed())
     plot_passive_activity(df_passifs_renamed(), input$col_id_passifs)
   })
-
+  
 }
 
 # ======================================================================
