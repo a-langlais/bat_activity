@@ -4,8 +4,8 @@
 #               indicateurs d'activité chiroptérologique.
 #
 # Auteur: Alexandre LANGLAIS
-# Date: 2025/06/14
-# Version: 1.0
+# Date: 2025/07/31
+# Version: 1.1
 # GitHub : https://github.com/a-langlais/bat_activity
 # Dépendances: shiny, readr, dplyr, here, plotly
 #
@@ -121,7 +121,7 @@ server <- function(input, output, session) {
   read_data <- function(file_input) {
     req(file_input)
     tryCatch({
-      data_raw <- read_delim(file_input$datapath, delim = ";", show_col_types = FALSE)
+      data_raw <- read_delim(file_input$datapath, delim = ";", col_types = cols(.default = "c"), show_col_types = FALSE)
       
       # Convertir toutes les colonnes de type caractère en UTF-8
       data_clean <- data_raw %>%
@@ -246,13 +246,16 @@ server <- function(input, output, session) {
     
   
   output$preview_data_passifs <- renderTable({
-    head(raw_data_passifs())
+    df <- head(raw_data_passifs())
+    df
   })
   
   df_passifs_renamed <- eventReactive(input$run_analysis_passifs, {
     req(raw_data_passifs())
     df <- raw_data_passifs()
-    as.POSIXct(df[[input$col_night_date_passifs]], format = "%Y-%m-%d")
+    
+    # Assigner la conversion de Night_Date au dataframe
+    df$Night_Date <- as.Date(df[[input$col_night_date_passifs]], format = "%Y-%m-%d")
     
     # Créer Date_Time selon le choix de l'utilisateur
     df$Date_Time <- if (input$time_choice == "separate") {
@@ -277,8 +280,9 @@ server <- function(input, output, session) {
         Place = all_of(input$col_place_passifs),
         Id = all_of(input$col_id_passifs),
         Night_Date = all_of(input$col_night_date_passifs)
-        # Date_Time déjà gérée manuellement plus haut
       )
+    
+    df
   })
   
   analysis_result_passifs <- eventReactive(input$run_analysis_passifs, {
