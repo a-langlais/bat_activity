@@ -36,7 +36,7 @@ TableFormatage <- function(table, sftw = "Tadarida"){
     Place <- substr(File, 1, nchar(File)-20)
     Id <- table$Id
     
-    DateTime <- substr(File, nchar(File)-18, nchar(File)-1)
+    DateTime <- substr(File, nchar(File)-19, nchar(File)-1)
     Year <- substr(DateTime, 1, 4)
     Month <- substr(DateTime, 5, 6)
     Day <- substr(DateTime, 7, 8)
