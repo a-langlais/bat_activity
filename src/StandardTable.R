@@ -5,8 +5,8 @@
 #              SonoChiro ou Tadarida (en anglais).
 #
 # Auteur: Alexandre LANGLAIS
-# Date: 2025/07/30
-# Version: 1.2
+# Date: 2025/07/31
+# Version: 1.3
 # GitHub : https://github.com/a-langlais/bat_activity
 # Dépendances: aucune
 #
@@ -18,8 +18,9 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   #  
   if(sftw == "Tadarida"){
     File <- table$nom.du.fichier
+    File <- sub("\\.\\w+$", "", File)
     Place <- substr(File, 25, nchar(File)-20)
-    Id <- ifelse(table$observateur_taxon == "", table$tadarida_taxon, table$observateur_taxon)
+    Id <- ifelse(is.na(table$observateur_taxon), table$tadarida_taxon, table$observateur_taxon)
     
     DateTime <- substr(File, nchar(File)-18, nchar(File)-1)
     Year <- substr(DateTime, 1, 4)
@@ -31,6 +32,7 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   #
   if(sftw == "SonoChiro"){
     File <- table$File
+    File <- sub("\\.\\w+$", "", File)
     Place <- substr(File, 1, nchar(File)-20)
     Id <- table$Id
     
@@ -62,3 +64,4 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   write.table(table.temp, file = "BatTable.csv", row.names = FALSE, col.names = TRUE, sep = ";", dec = ",")
   return(table.temp)
 }
+
