@@ -20,6 +20,7 @@ TableFormatage <- function(table, sftw = "Tadarida"){
     File <- table$nom.du.fichier
     File <- sub("\\.\\w+$", "", File)
     Place <- substr(File, 25, nchar(File)-20)
+    table$observateur_taxon[table$observateur_taxon == ""] <- NA
     Id <- ifelse(is.na(table$observateur_taxon), table$tadarida_taxon, table$observateur_taxon)
     
     DateTime <- substr(File, nchar(File)-18, nchar(File)-1)
@@ -64,4 +65,3 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   write.table(table.temp, file = "BatTable.csv", row.names = FALSE, col.names = TRUE, sep = ";", dec = ",")
   return(table.temp)
 }
-
