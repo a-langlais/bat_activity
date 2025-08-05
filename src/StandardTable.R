@@ -5,8 +5,8 @@
 #              SonoChiro ou Tadarida (en anglais).
 #
 # Auteur: Alexandre LANGLAIS
-# Date: 2025/07/31
-# Version: 1.3
+# Date: 2025/08/05
+# Version: 1.4
 # GitHub : https://github.com/a-langlais/bat_activity
 # Dépendances: aucune
 #
