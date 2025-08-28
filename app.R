@@ -37,6 +37,8 @@ source("src/app/BatActive.R")
 source("src/app/BatPlots.R")
 source("src/app/BatPassive.R")
 
+options(shiny.maxRequestSize = 50 * 1024^2)
+
 # ======================================================================
 # INTERFACE UI
 # ======================================================================
