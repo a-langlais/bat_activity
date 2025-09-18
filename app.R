@@ -86,8 +86,8 @@ ui <- fluidPage(
                  
                  conditionalPanel(
                    condition = "input.time_option == 'fixed'",
-                   textInput("start_time", "Heure de début (HH:MM)", value = "08:00"),
-                   textInput("end_time", "Heure de fin (HH:MM)", value = "22:00")
+                   textInput("start_time", "Heure de début (HH:MM)", value = "22:00"),
+                   textInput("end_time", "Heure de fin (HH:MM)", value = "07:00")
                  ),
                  
                  conditionalPanel(
