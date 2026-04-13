@@ -14,7 +14,7 @@
 #               standard.
 # =======================================================================================
 
-TableFormatage <- function(table, sftw = "Tadarida"){
+TableFormatage <- function(table, sftw = "Tadarida", table_name = "BatActivity.csv"){
   #  
   if(sftw == "Tadarida"){
     File <- table$nom.du.fichier
@@ -62,6 +62,8 @@ TableFormatage <- function(table, sftw = "Tadarida"){
   #
   table.temp$Week <- strftime(table.temp$Night_Date, format = "%V")
   #
-  write.table(table.temp, file = "BatTable.csv", row.names = FALSE, col.names = TRUE, sep = ";", dec = ",")
+  write.table(table.temp, file = table_name, row.names = FALSE, col.names = TRUE, sep = ";", dec = ",")
   return(table.temp)
 }
+
+TableFormatage(table, sftw = "Tadarida", table_name = "BatActivity.csv")
