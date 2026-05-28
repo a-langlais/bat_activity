@@ -19,9 +19,11 @@
 # Liste des packages et versions requises
 required_packages <- list(
   shiny     = "1.10.0",   # interface web
+  bslib     = "0.9.0",    # thème Bootstrap pour Shiny
+  DT        = "0.33",     # tableaux interactifs
   readr     = "2.1.5",    # lecture rapide de fichiers
   dplyr     = "1.1.4",    # manipulation de données
-  tidyr     = "1.2.1",    # manipulation de données
+  tidyr     = "1.3.1",    # manipulation de données
   here      = "1.0.1",    # gestion des chemins relatifs
   plotly    = "4.10.4",   # graphiques interactifs
   ggplot2   = "3.5.2",    # graphiques basiques
