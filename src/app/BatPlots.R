@@ -85,9 +85,12 @@ plot_passive_activity <- function(data, col_id, city = "Paris") {
 
   coords <- filter(cities_coords, Place == city)
 
+  night_start_hour <- 16
+  night_end_hour <- 34
+
   to_night_hour <- function(datetime) {
     hour_value <- hour(datetime) + minute(datetime) / 60 + second(datetime) / 3600
-    ifelse(hour_value < 18, hour_value + 24, hour_value)
+    ifelse(hour_value < night_start_hour, hour_value + 24, hour_value)
   }
 
   data <- data %>%
@@ -98,7 +101,7 @@ plot_passive_activity <- function(data, col_id, city = "Paris") {
     ) %>%
     arrange(Date)
 
-  y_ticks <- seq(18, 42, by = 2)
+  y_ticks <- seq(night_start_hour, night_end_hour, by = 2)
   y_labels <- sapply(y_ticks, function(h) {
     heure <- floor(h) %% 24
     sprintf("%02d:00", heure)
@@ -171,7 +174,7 @@ plot_passive_activity <- function(data, col_id, city = "Paris") {
         title = "Heure",
         tickvals = y_ticks,
         ticktext = y_labels,
-        range = c(17, 31),
+        range = c(night_start_hour - 1, night_end_hour),
         zeroline = FALSE
       ),
       legend = list(title = list(text = paste0("<b>", col_id, "</b>")))
