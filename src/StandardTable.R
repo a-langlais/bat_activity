@@ -132,7 +132,7 @@ StandardTable <- function(table,
   Date_Time <- as.POSIXct(
     paste(Date, Time),
     format = "%Y-%m-%d %H:%M",
-    tz = "UTC"
+    tz = "Europe/Paris"
   )
   Night_Date <- ifelse(as.numeric(parts$Hour) < 10, Date - 1, Date)
   Night_Date <- as.Date(Night_Date, origin = "1970-01-01")

@@ -29,6 +29,7 @@ source("src/app/BatPlots.R")
 source("src/app/BatPassive.R")
 
 options(shiny.maxRequestSize = 50 * 1024^2)
+app_timezone <- "Europe/Paris"
 
 # ======================================================================
 # OUTILS UI
@@ -334,13 +335,13 @@ server <- function(input, output, session) {
   parse_datetime_column <- function(x) {
     x <- trimws(as.character(x))
     x <- sub("\\s+(UTC|GMT|CEST|CET)$", "", x, ignore.case = TRUE)
-    parsed <- rep(as.POSIXct(NA, tz = "UTC"), length(x))
+    parsed <- rep(as.POSIXct(NA, tz = app_timezone), length(x))
     numeric_value <- suppressWarnings(as.numeric(gsub(",", ".", x)))
     numeric_datetimes <- is.na(parsed) & !is.na(numeric_value) & numeric_value > 20000
     parsed[numeric_datetimes] <- as.POSIXct(
       (numeric_value[numeric_datetimes] - 25569) * 86400,
       origin = "1970-01-01",
-      tz = "UTC"
+      tz = app_timezone
     )
 
     datetime_formats <- c(
@@ -359,7 +360,7 @@ server <- function(input, output, session) {
     for (fmt in datetime_formats) {
       missing <- is.na(parsed) & !is.na(x) & x != ""
       if (!any(missing)) break
-      parsed[missing] <- as.POSIXct(strptime(x[missing], format = fmt, tz = "UTC"))
+      parsed[missing] <- as.POSIXct(strptime(x[missing], format = fmt, tz = app_timezone))
     }
 
     parsed

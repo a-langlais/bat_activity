@@ -32,6 +32,7 @@ BatPassive <- function(data,
   library(lubridate)  # 1.9.4
   library(suncalc)    # 0.5.1
   library(tibble)     # 3.2.1
+  local_timezone <- "Europe/Paris"
 
   required_cols <- c("Place", "Id", "Night_Date", "Date_Time")
   missing_cols <- setdiff(required_cols, names(data))
@@ -71,18 +72,18 @@ BatPassive <- function(data,
 
   parse_passive_datetime <- function(x) {
     if (inherits(x, "POSIXct")) {
-      return(x)
+      return(lubridate::force_tz(x, tzone = local_timezone))
     }
 
     x <- trimws(as.character(x))
     x <- sub("\\s+(UTC|GMT|CEST|CET)$", "", x, ignore.case = TRUE)
-    parsed <- rep(as.POSIXct(NA, tz = "UTC"), length(x))
+    parsed <- rep(as.POSIXct(NA, tz = local_timezone), length(x))
     numeric_value <- suppressWarnings(as.numeric(gsub(",", ".", x)))
     numeric_datetimes <- is.na(parsed) & !is.na(numeric_value) & numeric_value > 20000
     parsed[numeric_datetimes] <- as.POSIXct(
       (numeric_value[numeric_datetimes] - 25569) * 86400,
       origin = "1970-01-01",
-      tz = "UTC"
+      tz = local_timezone
     )
 
     datetime_formats <- c(
@@ -101,7 +102,7 @@ BatPassive <- function(data,
     for (fmt in datetime_formats) {
       missing <- is.na(parsed) & !is.na(x) & x != ""
       if (!any(missing)) break
-      parsed[missing] <- as.POSIXct(strptime(x[missing], format = fmt, tz = "UTC"))
+      parsed[missing] <- as.POSIXct(strptime(x[missing], format = fmt, tz = local_timezone))
     }
 
     parsed
@@ -166,8 +167,8 @@ BatPassive <- function(data,
   # Calcul des durées de nuit
   if (!is.null(sun_offsets)) {
     times_df <- lapply(all_nights, function(nd) {
-      s1 <- getSunlightTimes(date = nd, lat = lat, lon = lon, keep = "sunset")
-      s2 <- getSunlightTimes(date = nd + 1, lat = lat, lon = lon, keep = "sunrise")
+      s1 <- getSunlightTimes(date = nd, lat = lat, lon = lon, keep = "sunset", tz = local_timezone)
+      s2 <- getSunlightTimes(date = nd + 1, lat = lat, lon = lon, keep = "sunrise", tz = local_timezone)
       start <- s1$sunset - minutes(abs(sun_offsets["before_sunset"]))
       end <- s2$sunrise + minutes(abs(sun_offsets["after_sunrise"]))
       tibble(Night_Date = nd, start_time = start, end_time = end,
@@ -185,8 +186,8 @@ BatPassive <- function(data,
 
     times_df <- tibble(
       Night_Date = all_nights,
-      start_time = as.POSIXct(paste(all_nights, record_time[1]), tz = "UTC"),
-      end_time = as.POSIXct(paste(end_dates, record_time[2]), tz = "UTC"),
+      start_time = as.POSIXct(paste(all_nights, record_time[1]), tz = local_timezone),
+      end_time = as.POSIXct(paste(end_dates, record_time[2]), tz = local_timezone),
       duration_hours = fixed_duration
     )
   }

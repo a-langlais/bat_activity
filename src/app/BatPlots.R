@@ -13,6 +13,7 @@ library(dplyr)      # 1.1.4
 library(lubridate)  # 1.9.4
 library(suncalc)    # 0.5.1
 library(tibble)     # 3.2.1
+local_timezone <- "Europe/Paris"
 
 plot_behavior_pie <- function(indicateurs_df) {
   all_row <- indicateurs_df[indicateurs_df$Point == "All", ]
@@ -91,7 +92,7 @@ plot_passive_activity <- function(data, col_id, city = "Paris") {
 
   data <- data %>%
     mutate(
-      Date_Time = as.POSIXct(Date_Time, tz = "UTC"),
+      Date_Time = as.POSIXct(Date_Time, tz = local_timezone),
       Date = as.Date(Date_Time),
       Heure_num = to_night_hour(Date_Time)
     ) %>%
@@ -109,7 +110,7 @@ plot_passive_activity <- function(data, col_id, city = "Paris") {
     lat = coords$Latitude,
     lon = coords$Longitude,
     keep = c("sunrise", "sunset"),
-    tz = "UTC"
+    tz = local_timezone
   )
 
   sun_df <- sun_times %>%
