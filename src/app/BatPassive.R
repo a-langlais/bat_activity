@@ -28,9 +28,84 @@ BatPassive <- function(data,
                        sun_offsets = NULL) {
   
   library(dplyr)      # 1.1.4
+  library(tidyr)      # 1.3.1
   library(lubridate)  # 1.9.4
   library(suncalc)    # 0.5.1
   library(tibble)     # 3.2.1
+
+  required_cols <- c("Place", "Id", "Night_Date", "Date_Time")
+  missing_cols <- setdiff(required_cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop(paste0("Le tableau doit contenir les colonnes suivantes : ", paste(required_cols, collapse = ", "), "."))
+  }
+
+  parse_passive_date <- function(x) {
+    if (inherits(x, "Date")) {
+      return(x)
+    }
+
+    x <- trimws(as.character(x))
+    x <- sub("\\s+(UTC|GMT|CEST|CET)$", "", x, ignore.case = TRUE)
+    parsed <- rep(as.Date(NA), length(x))
+    numeric_value <- suppressWarnings(as.numeric(gsub(",", ".", x)))
+    numeric_dates <- is.na(parsed) & !is.na(numeric_value) & numeric_value > 20000
+    parsed[numeric_dates] <- as.Date(floor(numeric_value[numeric_dates]), origin = "1899-12-30")
+
+    date_formats <- c("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d")
+
+    for (fmt in date_formats) {
+      missing <- is.na(parsed) & !is.na(x) & x != ""
+      if (!any(missing)) break
+      parsed[missing] <- as.Date(x[missing], format = fmt)
+    }
+
+    missing <- is.na(parsed) & !is.na(x) & x != ""
+
+    if (any(missing)) {
+      parsed_datetime <- parse_passive_datetime(x[missing])
+      parsed[missing] <- as.Date(parsed_datetime)
+    }
+
+    parsed
+  }
+
+  parse_passive_datetime <- function(x) {
+    if (inherits(x, "POSIXct")) {
+      return(x)
+    }
+
+    x <- trimws(as.character(x))
+    x <- sub("\\s+(UTC|GMT|CEST|CET)$", "", x, ignore.case = TRUE)
+    parsed <- rep(as.POSIXct(NA, tz = "UTC"), length(x))
+    numeric_value <- suppressWarnings(as.numeric(gsub(",", ".", x)))
+    numeric_datetimes <- is.na(parsed) & !is.na(numeric_value) & numeric_value > 20000
+    parsed[numeric_datetimes] <- as.POSIXct(
+      (numeric_value[numeric_datetimes] - 25569) * 86400,
+      origin = "1970-01-01",
+      tz = "UTC"
+    )
+
+    datetime_formats <- c(
+      "%Y-%m-%d %H:%M:%OS",
+      "%Y-%m-%d %H:%M:%S",
+      "%Y-%m-%d %H:%M",
+      "%Y-%m-%dT%H:%M:%OS",
+      "%Y-%m-%dT%H:%M:%S",
+      "%Y-%m-%dT%H:%M:%OSZ",
+      "%Y-%m-%dT%H:%M:%SZ",
+      "%d/%m/%Y %H:%M:%OS",
+      "%d/%m/%Y %H:%M:%S",
+      "%d/%m/%Y %H:%M"
+    )
+
+    for (fmt in datetime_formats) {
+      missing <- is.na(parsed) & !is.na(x) & x != ""
+      if (!any(missing)) break
+      parsed[missing] <- as.POSIXct(strptime(x[missing], format = fmt, tz = "UTC"))
+    }
+
+    parsed
+  }
   
   # Table interne des villes avec coordonnées
   cities_coords <- tibble(
@@ -50,13 +125,40 @@ BatPassive <- function(data,
   lon <- coords$Longitude
   
   # Colonnes temporelles
+  original_data <- data
   data <- data %>%
     mutate(
-      Night_Date = as.Date(Night_Date),
-      Date_Time = as.POSIXct(Date_Time, tz = "UTC"),
+      Night_Date = parse_passive_date(Night_Date),
+      Date_Time = parse_passive_datetime(Date_Time),
       Hour = hour(Date_Time),
       Minute = minute(Date_Time)
     )
+
+  if (nrow(data) == 0) {
+    stop("Le tableau ne contient aucune ligne à analyser.")
+  }
+
+  if (any(is.na(data$Night_Date)) || any(is.na(data$Date_Time))) {
+    invalid_night <- unique(as.character(original_data$Night_Date[is.na(data$Night_Date)]))
+    invalid_time <- unique(as.character(original_data$Date_Time[is.na(data$Date_Time)]))
+    invalid_night <- invalid_night[!is.na(invalid_night) & invalid_night != ""]
+    invalid_time <- invalid_time[!is.na(invalid_time) & invalid_time != ""]
+
+    details <- c()
+    if (length(invalid_night) > 0) {
+      details <- c(details, paste0("Night_Date: ", paste(shQuote(head(invalid_night, 3)), collapse = ", ")))
+    }
+    if (length(invalid_time) > 0) {
+      details <- c(details, paste0("Date_Time: ", paste(shQuote(head(invalid_time, 3)), collapse = ", ")))
+    }
+    if (length(details) == 0) {
+      details <- "certaines lignes sont vides dans Night_Date ou Date_Time"
+    } else {
+      details <- paste(details, collapse = " | ")
+    }
+
+    stop(paste0("Certaines dates n'ont pas pu être converties (", details, ")."))
+  }
   
   # Liste complète des nuits
   all_nights <- seq(min(data$Night_Date), max(data$Night_Date), by = "day")
@@ -79,10 +181,12 @@ BatPassive <- function(data,
                              (end_time_num - start_time_num) / 3600,
                              (24 * 3600 - (start_time_num - end_time_num)) / 3600)
     
+    end_dates <- if (end_time_num > start_time_num) all_nights else all_nights + 1
+
     times_df <- tibble(
       Night_Date = all_nights,
       start_time = as.POSIXct(paste(all_nights, record_time[1]), tz = "UTC"),
-      end_time = as.POSIXct(paste(all_nights + 1, record_time[2]), tz = "UTC"),
+      end_time = as.POSIXct(paste(end_dates, record_time[2]), tz = "UTC"),
       duration_hours = fixed_duration
     )
   }
@@ -91,6 +195,10 @@ BatPassive <- function(data,
   data <- data %>%
     left_join(times_df, by = "Night_Date") %>%
     filter(Date_Time >= start_time & Date_Time <= end_time)
+
+  if (nrow(data) == 0) {
+    stop("Aucune observation ne tombe dans la plage horaire sélectionnée. Modifiez les heures fixes ou le mode éphémérides.")
+  }
   
   # Heures et minutes positives
   hour_minute_summary <- data %>%
@@ -122,7 +230,7 @@ BatPassive <- function(data,
     left_join(contacts_per_night, by = c("Place", "Id", "Night_Date")) %>%
     left_join(times_df, by = "Night_Date") %>%
     mutate(
-      n_contacts = replace_na(n_contacts, 0),
+      n_contacts = tidyr::replace_na(n_contacts, 0),
       contacts_per_hour = n_contacts / duration_hours
     )
   
@@ -144,8 +252,8 @@ BatPassive <- function(data,
     ) %>%
     left_join(hour_minute_summary, by = c("Place", "Id")) %>%
     mutate(
-      hour_positive = replace_na(hour_positive, 0),
-      minute_positive = replace_na(minute_positive, 0)
+      hour_positive = tidyr::replace_na(hour_positive, 0),
+      minute_positive = tidyr::replace_na(minute_positive, 0)
     ) %>%
     select(
       Place, Id,
