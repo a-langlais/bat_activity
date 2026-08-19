@@ -1,22 +1,22 @@
 # =======================================================================================
 # Titre: Application d'analyse des données d'activité Chiroptérologique
-# Description:  Application intéractive pour l'importation, le calcul et la visualisation des
+# Description:  Application intéractive pour l'importation et le calcul des
 #               indicateurs d'activité chiroptérologique.
 #
 # Auteur: Alexandre LANGLAIS
 # Date: 2025/06/14
 # Version: 1.0
 # GitHub : https://github.com/a-langlais/bat_activity
-# Dépendances: shiny, readr, dplyr, plotly
+# Dépendances: shiny, readr, dplyr
 #
-# Instructions: Ce script permet de lancer une application shiny a deux onglets :
+# Instructions: Ce script permet de lancer une application shiny a trois onglets :
+#                 - "Standardiser" : pour convertir les exports bruts au format standard
 #                 - "Points actifs" : pour l'analyse des points manuels
 #                 - "Points passifs" : pour l'analyse des points d'enregistrements continus
 #
 #               L'application permet d'importer son fichier, sélectionner les colonnes 
 #               pertinentes et calculer automatiquement les indicateurs. Les résultats 
-#               sont présentés sous forme d'un tableau d'une part, et de visualisations 
-#               sommaires d'autre part. Le tableau est exportable au format .csv.
+#               sont présentés sous forme de tableaux exportables au format .csv.
 # =======================================================================================
 
 # ======================================================================
@@ -27,23 +27,133 @@
 library(shiny)    # 1.10.0
 library(readr)    # 2.1.5
 library(dplyr)    # 1.1.4
-library(plotly)   # 4.10.4
 
 # Chargement des fonctions
 source(file.path("R", "BatActive.R"))
-source(file.path("R", "BatPlots.R"))
 source(file.path("R", "BatPassive.R"))
+source(file.path("R", "Standardize.R"))
 
 # ======================================================================
 # INTERFACE UI
 # ======================================================================
 
 ui <- fluidPage(
-  titlePanel("🦇 Analyse d'activité des chauves-souris"),
-  tags$h6("© 2025 - Alexandre LANGLAIS (langlais.alexandre03@gmail.com)"),
-  tags$br(),
+  tags$head(
+    tags$style(HTML("
+      body {
+        background: #f7f8f7;
+        color: #1f2933;
+      }
+      .container-fluid {
+        max-width: 1280px;
+      }
+      .app-header {
+        border-bottom: 1px solid #dfe5e2;
+        margin-bottom: 20px;
+        padding: 18px 0 14px;
+      }
+      .app-title {
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 0;
+        margin: 0;
+      }
+      .app-subtitle {
+        color: #66736f;
+        font-size: 14px;
+        margin: 5px 0 0;
+      }
+      .nav-tabs {
+        border-bottom-color: #dfe5e2;
+        margin-bottom: 18px;
+      }
+      .nav-tabs > li > a {
+        color: #4b5a56;
+        border-radius: 4px 4px 0 0;
+      }
+      .nav-tabs > li.active > a,
+      .nav-tabs > li.active > a:focus,
+      .nav-tabs > li.active > a:hover {
+        color: #1f2933;
+        font-weight: 600;
+      }
+      .well {
+        background: #ffffff;
+        border: 1px solid #dfe5e2;
+        border-radius: 6px;
+        box-shadow: none;
+      }
+      label {
+        color: #33413d;
+        font-weight: 500;
+      }
+      .btn {
+        border-radius: 4px;
+      }
+      .btn-primary {
+        background: #315b4f;
+        border-color: #315b4f;
+      }
+      .btn-primary:hover,
+      .btn-primary:focus {
+        background: #274a40;
+        border-color: #274a40;
+      }
+      .btn-default {
+        background: #ffffff;
+        border-color: #cfd8d4;
+        color: #2f3f3a;
+      }
+      .section-title {
+        border-bottom: 1px solid #e5ebe8;
+        color: #263630;
+        font-size: 15px;
+        font-weight: 600;
+        margin: 22px 0 12px;
+        padding-bottom: 8px;
+      }
+      .status-text {
+        color: #66736f;
+        font-size: 13px;
+        margin-bottom: 14px;
+      }
+      .app-footer {
+        border-top: 1px solid #dfe5e2;
+        color: #8a9692;
+        font-size: 12px;
+        margin-top: 28px;
+        padding: 14px 0 18px;
+        text-align: right;
+      }
+    "))
+  ),
+  tags$header(
+    class = "app-header",
+    tags$h1(class = "app-title", "BatActivity"),
+    tags$p(class = "app-subtitle", "Analyse interactive des données d'activité chiroptérologique")
+  ),
   
   tabsetPanel(
+    tabPanel("Standardiser",
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("csv_file_standard", "Charger un fichier CSV", accept = ".csv"),
+                 selectInput("software_standard", "Format source", choices = c("SonoChiro", "Tadarida")),
+                 actionButton("run_standard", "Standardiser", class = "btn-primary"),
+                 tags$div(style = "margin-top: 15px;", uiOutput("download_ui_standard")),
+                 width = 3
+               ),
+               mainPanel(
+                 tags$div(class = "status-text", textOutput("file_status_standard")),
+                 tags$h4(class = "section-title", "Échantillon du fichier source"),
+                 tableOutput("preview_data_standard"),
+                 tags$h4(class = "section-title", "Table standardisée"),
+                 tableOutput("standard_output"),
+                 width = 9
+               )
+             )
+    ),
+
     tabPanel("Points actifs",
              sidebarLayout(
                sidebarPanel(
@@ -51,20 +161,17 @@ ui <- fluidPage(
                  uiOutput("col_select_ui_actifs"),
                  numericInput("duration_actifs", "Durée d'écoute (en minutes)", value = 10, min = 1),
                  numericInput("npoint_actifs", "Nombre de points d'observation", value = 5, min = 1),
-                 actionButton("run_analysis_actifs", "Lancer l’analyse"),
-                 tags$div(style = "margin-top: 15px;", uiOutput("download_ui_actifs"))
+                 actionButton("run_analysis_actifs", "Lancer l’analyse", class = "btn-primary"),
+                 tags$div(style = "margin-top: 15px;", uiOutput("download_ui_actifs")),
+                 width = 3
                ),
                mainPanel(
-                 verbatimTextOutput("file_status_actifs"),
-                 h3("👀 Échantillon du jeu de données"),
+                 tags$div(class = "status-text", textOutput("file_status_actifs")),
+                 tags$h4(class = "section-title", "Échantillon du jeu de données"),
                  tableOutput("preview_data_actifs"),
-                 h3("🎯 Tableau des indicateurs"),
+                 tags$h4(class = "section-title", "Tableau des indicateurs"),
                  tableOutput("analysis_output_actifs"),
-                 h3("📊 Visualisation des résultats"),
-                 fluidRow(
-                   column(6, plotlyOutput("behavior_pie_actifs")),
-                   column(6, plotlyOutput("species_bar_actifs"))
-                 )
+                 width = 9
                )
              )
     ),
@@ -91,21 +198,22 @@ ui <- fluidPage(
                    numericInput("minutes_after_sunrise", "Minutes après le lever du soleil", value = 30, min = 0)
                  ),
                  
-                 actionButton("run_analysis_passifs", "Lancer l’analyse"),
-                 tags$div(style = "margin-top: 15px;", uiOutput("download_ui_passifs"))
+                 actionButton("run_analysis_passifs", "Lancer l’analyse", class = "btn-primary"),
+                 tags$div(style = "margin-top: 15px;", uiOutput("download_ui_passifs")),
+                 width = 3
                ),
                mainPanel(
-                 verbatimTextOutput("file_status_passifs"),
-                 h3("👀 Échantillon du jeu de données"),
+                 tags$div(class = "status-text", textOutput("file_status_passifs")),
+                 tags$h4(class = "section-title", "Échantillon du jeu de données"),
                  tableOutput("preview_data_passifs"),
-                 h3("🎯 Tableau des indicateurs"),
+                 tags$h4(class = "section-title", "Tableau des indicateurs"),
                  tableOutput("analysis_output_passifs"),
-                 h3("📊 Visualisation des résultats"),
-                 plotlyOutput("passive_plot")
+                 width = 9
                )
              )
     )
-  )
+  ),
+  tags$footer(class = "app-footer", "© Alexandre LANGLAIS")
 )
 
 # ======================================================================
@@ -129,6 +237,65 @@ server <- function(input, output, session) {
       NULL
     })
   }
+
+  #######
+  ####### Standardiser
+  #######
+
+  raw_data_standard <- reactive({
+    read_data(input$csv_file_standard)
+  })
+
+  output$file_status_standard <- renderText({
+    if (is.null(input$csv_file_standard)) return("Aucun fichier chargé.")
+    if (is.null(raw_data_standard())) return("Erreur lors de la lecture du fichier.")
+    paste0("Fichier chargé avec ", nrow(raw_data_standard()), " lignes et ", ncol(raw_data_standard()), " colonnes.")
+  })
+
+  output$preview_data_standard <- renderTable({
+    head(raw_data_standard())
+  })
+
+  standardized_data <- eventReactive(input$run_standard, {
+    req(raw_data_standard())
+    tryCatch(
+      standardize_table_app(
+        data = as.data.frame(raw_data_standard()),
+        software = input$software_standard
+      ),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error")
+        NULL
+      }
+    )
+  })
+
+  output$standard_output <- renderTable({
+    req(standardized_data())
+    head(standardized_data(), 10)
+  })
+
+  output$download_ui_standard <- renderUI({
+    req(standardized_data())
+    downloadButton("download_standard_table", "Télécharger la table (.csv)", class = "btn-default")
+  })
+
+  output$download_standard_table <- downloadHandler(
+    filename = function() {
+      paste0("table_standard_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      req(standardized_data())
+      write.table(
+        standardized_data(),
+        file = file,
+        row.names = FALSE,
+        col.names = TRUE,
+        sep = ";",
+        dec = ","
+      )
+    }
+  )
   
   #######
   ####### Points actifs
@@ -180,7 +347,7 @@ server <- function(input, output, session) {
   
   output$download_ui_actifs <- renderUI({
     req(analysis_result_actifs())
-    downloadButton("download_indicateurs_actifs", "Télécharger les résultats (.csv)", class = "btn-success")
+    downloadButton("download_indicateurs_actifs", "Télécharger les résultats (.csv)", class = "btn-default")
   })
   
   output$download_indicateurs_actifs <- downloadHandler(
@@ -192,16 +359,6 @@ server <- function(input, output, session) {
       write.csv(analysis_result_actifs(), file, row.names = FALSE)
     }
   )
-  
-  output$behavior_pie_actifs <- renderPlotly({
-    req(analysis_result_actifs())
-    plot_behavior_pie(analysis_result_actifs())
-  })
-  
-  output$species_bar_actifs <- renderPlotly({
-    req(df_actifs_renamed())
-    plot_species_bar(df_actifs_renamed())
-  })
   
   #######
   ####### Points passifs
@@ -304,7 +461,7 @@ server <- function(input, output, session) {
   
   output$download_ui_passifs <- renderUI({
     req(analysis_result_passifs())
-    downloadButton("download_indicateurs_passifs", "Télécharger les résultats (.csv)", class = "btn-success")
+    downloadButton("download_indicateurs_passifs", "Télécharger les résultats (.csv)", class = "btn-default")
   })
   
   output$download_indicateurs_passifs <- downloadHandler(
@@ -317,11 +474,6 @@ server <- function(input, output, session) {
     }
   )
   
-  output$passive_plot <- renderPlotly({
-    req(df_passifs_renamed())
-    plot_passive_activity(df_passifs_renamed(), input$col_id_passifs)
-  })
-
 }
 
 # ======================================================================
