@@ -9,50 +9,86 @@ Il propose par ailleurs un format standard de tableau à utiliser pour les donn�
 
 Il s'agit de plusieurs fonctions que j'utilise dans le cadre de mes analyses en tant que chiroptérologue. Les fonctions calculent le nombre de contacts, le nombre de minutes positives, d'heures positives et les différents paramètres des contacts par heure (CPH) et contacts par nuit (CPN). Concernant les données actives, la fonction montre le nombre de CPH estimé (calculé sur une heure) et les proportions des trois comportements qualifiés ('Transit' pour un comportement de déplacement, 'Chasse' pour un comportement de chasse et 'Social' pour un cri à caractère social).
 
+### Organisation du dépôt
+
+Le dépôt est organisé en trois espaces principaux :
+
+```text
+bat_activity/
+├── batactivity/              # Package R installable
+│   ├── DESCRIPTION
+│   ├── NAMESPACE
+│   ├── R/
+│   ├── man/
+│   ├── tests/testthat/
+│   └── inst/extdata/          # Petits fichiers exemples standardisés
+├── shiny-app/                 # Application Shiny indépendante
+│   ├── app.R
+│   ├── R/
+│   ├── www/
+│   └── rsconnect/
+├── scripts/                   # Scripts one-shot reproductibles
+│   ├── 01_standardiser_table.R
+│   └── 02_export_visualisations.R
+├── data/                      # Données exemples ou données projet
+├── output/                    # Sorties générées localement
+├── README.md
+└── LICENSE
+```
+
+Le dossier `batactivity/` contient la base du package R. Les scripts ponctuels restent dans `scripts/` et doivent partir autant que possible de tableaux déjà convertis au format standard BatActivity.
+
+Installation locale du package :
+
+```bash
+R CMD INSTALL batactivity
+```
+
 ### Les principales fonctions
 
-La fonction **`TableFormatage()`** convertit un tableau de sortie Tadarida ou Sonochiro en un format standard pour l'utilisation des scripts. La fonction renvoie un tableau.
+La fonction **`standardize_table()`** convertit un tableau de sortie Tadarida ou Sonochiro en un format standard pour l'utilisation des scripts. La fonction renvoie un tableau. L'ancien nom `TableFormatage()` reste disponible comme wrapper de compatibilité.
 
 ```R
 # Pour convertir un tableau de sortie SonoChiro
-data <- TableFormatage(table = resultats_brut_sonochiro, sftw = "SonoChiro")
+data <- standardize_table(data = resultats_brut_sonochiro, software = "SonoChiro")
 # Pour convertir un tableau de sortie Tadarida
-data <- TableFormatage(table = resultats_brut_tadarida, sftw = "Tadarida")
+data <- standardize_table(data = resultats_brut_tadarida, software = "Tadarida")
 ```
 
-La fonction **`BatActive()`** prend en arguments : le tableau standard, la durée des points en minutes et le nombre de points réalisés. La fonction renvoie un tableau.
+La fonction **`bat_active()`** prend en arguments : le tableau standard, la durée des points en minutes et le nombre de points réalisés. La fonction renvoie un tableau. L'ancien nom `BatActive()` reste disponible.
 
 ```R
 # Pour une session de 6 points d'écoute de 10 minutes
-results <- BatActive(table = data, duration = 10, npoint = 6)>
+results <- bat_active(data = data, duration = 10, npoint = 6)
 ```
 
-La fonction **`SpeciesPlaceActivity()`** prend en arguments : le tableau standard, le nombre de nuits enregsitrées, et l'heure de début et de fin dans un vecteur. La fonction renvoie un tableau.
+La fonction **`species_place_activity()`** prend en arguments : le tableau standard, le nombre de nuits enregsitrées, et l'heure de début et de fin dans un vecteur. La fonction renvoie un tableau. L'ancien nom `SpeciesPlaceActivity()` reste disponible.
 
 ```R
 # Pour une session d'une nuit enregsitrée de 22:00 à 06:00
-results <- SpeciesPlaceActivity(data = data, nights = 1, record_time = c("22:00", "06:00"))
+results <- species_place_activity(data = data, nights = 1, record_time = c("22:00", "06:00"))
 ```
 
-La fonction **`calculate_threshold()`** prend en arguments : le tableau standard, le tableau des données météorologiques, les dates de début et de fin dans un vecteur, les variables abiotiques a étudier, le pourcentage de sauvegarde de contacts visé et un booléen activant la production des graphiques par variables.
+La fonction **`calculate_threshold()`** prend en arguments : le tableau standard, le tableau des données météorologiques, les dates de début et de fin dans un vecteur, les variables abiotiques a étudier et le pourcentage de sauvegarde de contacts visé. La visualisation est séparée dans `plot_threshold()`. L'ancien nom `CalculateThreshold()` reste disponible.
 
 ```r
 # Pour calculer l'influence des variables abiotiques sur les contacts de chauves-souris sur la période juin-juillet avec un souhait de conserver 95% de l'activité
-CalculateThreshold(data = data, meteo = meteo, dates = c("01-06-2018", "31-07-2018"), var = c("Speed", "Temperature"), percent = 95, plot = TRUE)
+calculate_threshold(data = data, weather = meteo, dates = c("01-06-2018", "31-07-2018"), variables = c("Speed", "Temperature"), percent = 95)
 ```
 
-La fonction **`list.renamer()`** prend en argument une liste de fichiers *.wav. La fonction renomme directement les fichiers du répértoire.
+La fonction **`rename_audio_files()`** prend en argument une liste de fichiers *.wav. Par défaut, elle renvoie seulement le plan de renommage ; le renommage réel demande `dry_run = FALSE`. L'ancien nom `list.renamer()` reste disponible.
 
 ```R
 setwd() # répértoire du script
 files <- list.files(pattern = ".wav", ignore.case = TRUE)
-list.renamer(files)
+rename_audio_files(files)
 ```
 
-La fonction **`print_Signal()`** ne prend pas d'argument et permet de sélectionner un fichier *.csv de sortie d'un test micro étendu d'un TeensyRecorder pour en afficher la courbe de signal résultante.
+Les fonctions **`read_microphone_test()`** et **`plot_microphone_test()`** lisent et visualisent un fichier *.csv de sortie d'un test micro étendu d'un TeensyRecorder. L'ancien nom `print_Signal()` reste disponible, mais demande maintenant un chemin de fichier explicite.
 
 ```R
-print_Signal()
+test <- read_microphone_test("TR_test_micro.csv")
+plot_microphone_test(test)
 ```
 
 D'autres scripts permettent de réaliser diverses opérations comme visualiser les seuils de bridage en fonction de la température et de la vitesse du vent.
@@ -60,7 +96,7 @@ D'autres scripts permettent de réaliser diverses opérations comme visualiser l
 ### Tableaux standards
 
 Le format standard des tableaux est indispensable pour la bonne réalisation des fonctions et pour s'assurer que les données saisies soient de bonne qualité. De plus, cela facilite la concaténation si vous souhaitez réaliser une base de données. 
-Si vous êtes passés par un logiciel de clustering automatique comme Sonochiro ou la plateforme Tadarida, vous pouvez utiliser la sortie de ces logiciels pour le convertir en un tableau standard avec la fonction `TableFormatage()`. Pour le moment, tous les titres sont en anglais mais bientôt les fonctions prendront en charge des titres de colonnes en français et en anglais.
+Si vous êtes passés par un logiciel de clustering automatique comme Sonochiro ou la plateforme Tadarida, vous pouvez utiliser la sortie de ces logiciels pour le convertir en un tableau standard avec la fonction `standardize_table()`. Pour le moment, tous les titres sont en anglais mais bientôt les fonctions prendront en charge des titres de colonnes en français et en anglais.
 
 Concernant les données de protocole d'écoute passive, un tableau exemple bien saisi et prêt à l'utilisation est présenté comme ci-dessous : 
 ![passive](https://github.com/a-langlais/bat_activity/assets/160505900/55bfbf2c-0441-479d-a4a2-a0f848aa8bb5)
@@ -104,7 +140,7 @@ Cette application vise ainsi à réduire les erreurs de manipulation, à offrir 
 Pour lancer l'application Shiny, assurez-vous d'avoir installé R ainsi que les dépendances nécessaires. Ensuite, lancez l'application en exécutant le script principal :
 ```r
 install.packages(c("shiny", "plotly", "suncalc"))
-runApp("~/bat_activity/app.R")
+shiny::runApp("~/bat_activity/shiny-app")
 ```
 
 ### Prérequis
@@ -127,20 +163,16 @@ git clone https://github.com/a-langlais/BatActivity.git
 
 ### Dépendances
 
-Les scripts nécessitent les packages suivants : dplyr, ggplot2, lubridate, et suncalc. Pour les installer, lancez R ou RStudio et exécutez les commandes suivantes :
+Les fonctions de calcul du package utilisent maintenant uniquement R base. Les fonctions de visualisation optionnelles utilisent `ggplot2`.
 
 ```R
-install.packages("dplyr")
 install.packages("ggplot2")
-install.packages("lubridate")
-install.packages("suncalc")
 ```
 
 Pour l'application :
 ```R
 install.packages("shiny")
 install.packages("readr")
-install.packages("here")
 install.packages("dplyr")
 install.packages("plotly")
 install.packages("lubridate")

@@ -1,0 +1,19 @@
+Package: batactivity
+Title: Bat Activity Standardization and Analysis Tools
+Version: 0.0.0.9000
+Authors@R:
+    person("Alexandre", "LANGLAIS",
+           email = "langlais.alexandre03@gmail.com",
+           role = c("aut", "cre"))
+Author: Alexandre LANGLAIS [aut, cre]
+Maintainer: Alexandre LANGLAIS <langlais.alexandre03@gmail.com>
+Description: Tools to standardize and analyze bat acoustic activity data from
+    active and passive survey protocols.
+License: CC BY-NC 4.0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Suggests:
+    ggplot2,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
