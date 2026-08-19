@@ -42,7 +42,6 @@ plot_behavior_pie <- function(indicateurs_df) {
                   line = list(color = '#FFFFFF', width = 2))
   ) %>%
     layout(
-      title = list(text = "Répartition des comportements (All)", x = 0.5),
       # legend = list(title = list(text = '<b>Comportement</b>'))
       showlegend = FALSE
     )
@@ -72,7 +71,6 @@ plot_species_bar <- function(data_df) {
     hovertext = ~paste("Espèce:", Id, "<br>Contacts:", contacts)
   ) %>%
     layout(
-      title = list(text = "Nombre de contacts par espèce", x = 0.5),
       xaxis = list(title = "Nombre de contacts", zeroline = FALSE),
       yaxis = list(title = "Espèce", automargin = TRUE),
       margin = list(l = 120)
@@ -132,7 +130,6 @@ plot_passive_activity <- function(data, col_id) {
     height = 600
   ) %>%
     layout(
-      title = "Activité enregistrée en fonction du temps",
       xaxis = list(
         title = "Date",
         type = "date"
