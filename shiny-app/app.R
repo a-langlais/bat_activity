@@ -7,7 +7,7 @@
 # Date: 2025/06/14
 # Version: 1.0
 # GitHub : https://github.com/a-langlais/bat_activity
-# Dépendances: shiny, readr, dplyr, here, plotly
+# Dépendances: shiny, readr, dplyr, plotly
 #
 # Instructions: Ce script permet de lancer une application shiny a deux onglets :
 #                 - "Points actifs" : pour l'analyse des points manuels
@@ -27,14 +27,12 @@
 library(shiny)    # 1.10.0
 library(readr)    # 2.1.5
 library(dplyr)    # 1.1.4
-library(here)     # 1.0.1
 library(plotly)   # 4.10.4
 
 # Chargement des fonctions
-setwd(here())
-source("src/app/BatActive.R")
-source("src/app/BatPlots.R")
-source("src/app/BatPassive.R")  # Assure-toi d'avoir cette fonction pour les passifs
+source(file.path("R", "BatActive.R"))
+source(file.path("R", "BatPlots.R"))
+source(file.path("R", "BatPassive.R"))
 
 # ======================================================================
 # INTERFACE UI
