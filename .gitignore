@@ -51,3 +51,6 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 **/rsconnect/
+
+# Local Shiny run logs
+shiny-app/shiny-run.*.log
