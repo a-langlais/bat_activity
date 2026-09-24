@@ -1,10 +1,13 @@
-# Lancez ce script depuis la racine du depot.
+# Run this script from the repository root.
 
-source(file.path("batactivity", "R", "TableFormatage.R"))
+source(file.path("batactivity", "R", "utils.R"))
+source(file.path("batactivity", "R", "standardize.R"))
 
 input_file <- file.path("data", "Sortie_SonoChiro.csv")
-output_file <- file.path("data", "passive_standard.csv")
+output_file <- file.path("output", "passive_standard.csv")
 software <- "SonoChiro"
+
+dir.create(dirname(output_file), recursive = TRUE, showWarnings = FALSE)
 
 raw_data <- read.csv(input_file, sep = ";", stringsAsFactors = FALSE)
 standard_data <- standardize_table(
@@ -13,4 +16,4 @@ standard_data <- standardize_table(
   output_file = output_file
 )
 
-message("Table standard exportee : ", output_file)
+message("Standardized table exported to: ", output_file)
