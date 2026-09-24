@@ -54,3 +54,8 @@ rsconnect/
 
 # Local Shiny run logs
 shiny-app/shiny-run.*.log
+
+# Local Shiny renv library
+shiny-app/renv/library/
+shiny-app/renv/sandbox/
+shiny-app/renv/staging/

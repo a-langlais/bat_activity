@@ -90,10 +90,18 @@ snake_case function names are the preferred API.
 ## Shiny App
 
 The Shiny app is independent from the package and lives in `shiny-app/`.
+Its environment is recorded in `shiny-app/renv.lock`.
 
 ```r
-install.packages(c("shiny", "readr", "dplyr", "plotly", "lubridate", "suncalc", "tibble"))
+install.packages("renv")
+renv::restore(project = "shiny-app")
 shiny::runApp("shiny-app")
+```
+
+To install the application dependencies without `renv`:
+
+```r
+install.packages(c("shiny", "readr", "dplyr", "lubridate", "suncalc", "tibble"))
 ```
 
 ## Scripts
