@@ -33,6 +33,65 @@ source(file.path("R", "BatActive.R"))
 source(file.path("R", "BatPassive.R"))
 source(file.path("R", "Standardize.R"))
 
+detect_csv_delimiter <- function(file_path) {
+  lines <- readr::read_lines(file_path, n_max = 20, progress = FALSE)
+  non_empty_lines <- lines[nzchar(trimws(lines))]
+
+  if (length(non_empty_lines) == 0) {
+    stop("Le fichier CSV est vide.", call. = FALSE)
+  }
+
+  header <- non_empty_lines[[1]]
+  delimiters <- c(";", ",")
+  field_counts <- vapply(delimiters, function(delimiter) {
+    tryCatch(
+      ncol(utils::read.table(
+        text = header,
+        sep = delimiter,
+        quote = "\"",
+        comment.char = "",
+        header = FALSE,
+        fill = TRUE,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )),
+      error = function(e) 1L
+    )
+  }, integer(1))
+
+  if (max(field_counts) <= 1) {
+    stop("Impossible de détecter un séparateur ',' ou ';'.", call. = FALSE)
+  }
+
+  delimiters[[which.max(field_counts)]]
+}
+
+format_standard_preview <- function(data, timezone = "Europe/Paris") {
+  preview <- as.data.frame(data, stringsAsFactors = FALSE)
+
+  if ("Date_Time" %in% names(preview)) {
+    date_time <- data[["Date_Time"]]
+    if (!inherits(date_time, "POSIXt")) {
+      date_time <- as.POSIXct(date_time, tz = timezone)
+    }
+
+    preview$Date_Time <- paste(
+      format(date_time, format = "%Y-%m-%d", tz = timezone),
+      format(date_time, format = "%H:%M:%S", tz = timezone)
+    )
+
+    if ("Time" %in% names(preview)) {
+      preview$Time <- format(date_time, format = "%H:%M", tz = timezone)
+    }
+  }
+
+  for (column in intersect(c("Night_Date", "Date"), names(preview))) {
+    preview[[column]] <- format(as.Date(data[[column]]), format = "%Y-%m-%d")
+  }
+
+  preview
+}
+
 # ======================================================================
 # INTERFACE UI
 # ======================================================================
@@ -111,6 +170,10 @@ ui <- fluidPage(
         font-weight: 600;
         margin: 22px 0 12px;
         padding-bottom: 8px;
+      }
+      .table th,
+      .table td {
+        white-space: nowrap;
       }
       .status-text {
         color: #66736f;
@@ -223,14 +286,26 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   ####### Fonction de lecture #######
-  read_data <- function(file_input) {
+  read_data <- function(file_input, detect_delimiter = FALSE) {
     req(file_input)
     tryCatch({
-      data_raw <- read_delim(file_input$datapath, delim = ";", show_col_types = FALSE)
+      delimiter <- if (detect_delimiter) {
+        detect_csv_delimiter(file_input$datapath)
+      } else {
+        ";"
+      }
+
+      data_raw <- read_delim(
+        file_input$datapath,
+        delim = delimiter,
+        show_col_types = FALSE
+      )
       
       # Convertir toutes les colonnes de type caractère en UTF-8 propre
       data_clean <- data_raw %>%
         dplyr::mutate(across(where(is.character), ~iconv(., from = "UTF-8", to = "UTF-8", sub = "")))
+
+      attr(data_clean, "detected_delimiter") <- delimiter
       
       return(data_clean)
     }, error = function(e) {
@@ -243,13 +318,18 @@ server <- function(input, output, session) {
   #######
 
   raw_data_standard <- reactive({
-    read_data(input$csv_file_standard)
+    read_data(input$csv_file_standard, detect_delimiter = TRUE)
   })
 
   output$file_status_standard <- renderText({
     if (is.null(input$csv_file_standard)) return("Aucun fichier chargé.")
     if (is.null(raw_data_standard())) return("Erreur lors de la lecture du fichier.")
-    paste0("Fichier chargé avec ", nrow(raw_data_standard()), " lignes et ", ncol(raw_data_standard()), " colonnes.")
+    delimiter <- attr(raw_data_standard(), "detected_delimiter")
+    paste0(
+      "Fichier chargé avec ", nrow(raw_data_standard()), " lignes et ",
+      ncol(raw_data_standard()), " colonnes. Séparateur détecté : '",
+      delimiter, "'."
+    )
   })
 
   output$preview_data_standard <- renderTable({
@@ -272,7 +352,7 @@ server <- function(input, output, session) {
 
   output$standard_output <- renderTable({
     req(standardized_data())
-    head(standardized_data(), 10)
+    format_standard_preview(head(standardized_data(), 10))
   })
 
   output$download_ui_standard <- renderUI({
