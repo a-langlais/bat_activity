@@ -44,8 +44,18 @@ BatActive <- function(table, duration, npoint) {
 #'
 #' @return A data frame of passive activity indicators.
 #' @export
-SpeciesPlaceActivity <- function(data, nights = 1, record_time = c("22:00", "06:00")) {
-  species_place_activity(data = data, nights = nights, record_time = record_time)
+SpeciesPlaceActivity <- function(data,
+                                 city = "Paris",
+                                 record_time = c("08:00", "22:00"),
+                                 sun_offsets = NULL,
+                                 timezone = "Europe/Paris") {
+  species_place_activity(
+    data = data,
+    city = city,
+    record_time = record_time,
+    sun_offsets = sun_offsets,
+    timezone = timezone
+  )
 }
 
 #' Backward-compatible wrapper for `calculate_threshold()`
