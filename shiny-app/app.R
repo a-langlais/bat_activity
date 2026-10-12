@@ -382,13 +382,18 @@ server <- function(input, output, session) {
   #######
   
   raw_data_actifs <- reactive({
-    read_data(input$csv_file_actifs)
+    read_data(input$csv_file_actifs, detect_delimiter = TRUE)
   })
   
   output$file_status_actifs <- renderText({
     if (is.null(input$csv_file_actifs)) return("Aucun fichier chargé.")
     if (is.null(raw_data_actifs())) return("Erreur lors de la lecture du fichier.")
-    paste0("Fichier chargé avec ", nrow(raw_data_actifs()), " lignes et ", ncol(raw_data_actifs()), " colonnes.")
+    delimiter <- attr(raw_data_actifs(), "detected_delimiter")
+    paste0(
+      "Fichier chargé avec ", nrow(raw_data_actifs()), " lignes et ",
+      ncol(raw_data_actifs()), " colonnes. Séparateur détecté : '",
+      delimiter, "'."
+    )
   })
   
   output$col_select_ui_actifs <- renderUI({
@@ -445,13 +450,18 @@ server <- function(input, output, session) {
   #######
   
   raw_data_passifs <- reactive({
-    read_data(input$csv_file_passifs)
+    read_data(input$csv_file_passifs, detect_delimiter = TRUE)
   })
   
   output$file_status_passifs <- renderText({
     if (is.null(input$csv_file_passifs)) return("Aucun fichier chargé.")
     if (is.null(raw_data_passifs())) return("Erreur lors de la lecture du fichier.")
-    paste0("Fichier chargé avec ", nrow(raw_data_passifs()), " lignes et ", ncol(raw_data_passifs()), " colonnes.")
+    delimiter <- attr(raw_data_passifs(), "detected_delimiter")
+    paste0(
+      "Fichier chargé avec ", nrow(raw_data_passifs()), " lignes et ",
+      ncol(raw_data_passifs()), " colonnes. Séparateur détecté : '",
+      delimiter, "'."
+    )
   })
   
   output$col_select_ui_passifs <- renderUI({
@@ -486,33 +496,29 @@ server <- function(input, output, session) {
   df_passifs_renamed <- eventReactive(input$run_analysis_passifs, {
     req(raw_data_passifs())
     df <- raw_data_passifs()
-    as.POSIXct(df[[input$col_night_date_passifs]], format = "%Y-%m-%d")
+    night_date <- as.Date(df[[input$col_night_date_passifs]])
+    if (any(is.na(night_date))) {
+      showNotification("La colonne de date des nuits contient des valeurs invalides.", type = "error")
+      return(NULL)
+    }
     
     # Créer Date_Time selon le choix de l'utilisateur
     df$Date_Time <- if (input$time_choice == "separate") {
       req(input$col_date_passifs, input$col_time_passifs)
-      
-      # Combiner les colonnes Date + Time
-      datetime_str <- paste(df[[input$col_date_passifs]], df[[input$col_time_passifs]])
-      tryCatch({
-        as.POSIXct(datetime_str, format = "%Y-%m-%d %H:%M")
-      }, error = function(e) {
-        showNotification("Erreur lors de la conversion Date + Heure", type = "error")
-        rep(NA, nrow(df))
-      })
+      paste(df[[input$col_date_passifs]], df[[input$col_time_passifs]])
     } else {
       req(input$col_time_passifs)
-      as.POSIXct(df[[input$col_time_passifs]], format = "%Y-%m-%d %H:%M")
+      as.character(df[[input$col_time_passifs]])
     }
     
     # Renommer les autres colonnes
     df <- df %>%
       rename(
         Place = all_of(input$col_place_passifs),
-        Id = all_of(input$col_id_passifs),
-        Night_Date = all_of(input$col_night_date_passifs)
-        # Date_Time déjà gérée manuellement plus haut
+        Id = all_of(input$col_id_passifs)
       )
+    df$Night_Date <- night_date
+    df
   })
   
   analysis_result_passifs <- eventReactive(input$run_analysis_passifs, {
@@ -531,7 +537,8 @@ server <- function(input, output, session) {
       data = df,
       city = input$place_passifs,
       record_time = record_time,
-      sun_offsets = sun_offsets
+      sun_offsets = sun_offsets,
+      timezone = "Europe/Paris"
     )
   })
   

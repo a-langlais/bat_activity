@@ -57,7 +57,14 @@ standardize_table_app <- function(data,
     }
 
     File <- as.character(data[[file_col]])
-    Place <- as.character(substr(File, 25, 29))
+    Place <- sub(
+      "^.*-([^-_]+-[^-_]+)_[0-9]{8}_[0-9]{6}.*$",
+      "\\1",
+      File,
+      perl = TRUE
+    )
+    unmatched_place <- Place == File
+    Place[unmatched_place] <- substr(File[unmatched_place], 25, 29)
     Id <- coalesce_text(
       if (!is.null(validator_col)) data[[validator_col]],
       if (!is.null(observer_col)) data[[observer_col]],
@@ -67,23 +74,29 @@ standardize_table_app <- function(data,
       stop("No Tadarida species column found.", call. = FALSE)
     }
 
-    Year <- as.character(substr(File, 31, 34))
-    Month <- as.character(substr(File, 35, 36))
-    Day <- as.character(substr(File, 37, 38))
-    Hour <- as.character(substr(File, 40, 41))
-    Minute <- as.character(substr(File, 42, 43))
   } else {
     require_columns(data, c("File", "Id"), "data")
 
     File <- as.character(data$File)
     Place <- as.character(substr(File, 1, 5))
     Id <- as.character(data$Id)
-    Year <- as.character(substr(File, 7, 10))
-    Month <- as.character(substr(File, 11, 12))
-    Day <- as.character(substr(File, 13, 14))
-    Hour <- as.character(substr(File, 16, 17))
-    Minute <- as.character(substr(File, 18, 19))
   }
+
+  timestamp <- regmatches(
+    File,
+    regexpr("_[0-9]{8}_[0-9]{6}", File, perl = TRUE)
+  )
+  if (any(timestamp == "")) {
+    stop(
+      "At least one recording file name does not contain a _YYYYMMDD_HHMMSS timestamp.",
+      call. = FALSE
+    )
+  }
+  Year <- as.character(substr(timestamp, 2, 5))
+  Month <- as.character(substr(timestamp, 6, 7))
+  Day <- as.character(substr(timestamp, 8, 9))
+  Hour <- as.character(substr(timestamp, 11, 12))
+  Minute <- as.character(substr(timestamp, 13, 14))
 
   Date <- as.Date(paste(Year, Month, Day, sep = "-"), format = "%Y-%m-%d")
   if (any(is.na(Date))) {

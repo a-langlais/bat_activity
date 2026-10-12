@@ -1,168 +1,166 @@
-# =======================================================================================
-# Titre: Fonction BatPassive - Analyse des données d'activité chiroptérologique passive
-# Description:  Fonction R destinée à analyser les données d'enregistrement passif d'activité
-#               chiroptérologique. Elle traite un jeu de données contenant les enregistrements horaires,
-#               calcule des indicateurs d'activité nocturne (contacts, occurrences par heure, etc.) 
-#               en prenant en compte la localisation géographique et la période d'enregistrement.
+# Passive activity indicators used by the Shiny application.
 #
-# Auteur: Alexandre LANGLAIS
-# Date: 2025/06/23
-# Version: 1.1
-# GitHub : https://github.com/a-langlais/bat_activity
-# Dépendances: dplyr, lubridate, suncalc, tibble
-#
-# Paramètres:
-#   - data : data.frame ou tibble contenant les données d'activité avec colonnes obligatoires 
-#            (Place, Id, Night_Date, Date_Time)
-#   - city : caractère, nom de la ville pour les coordonnées géographiques (par défaut "Paris")
-#   - record_time : vecteur de 2 chaînes "HH:MM" définissant la plage horaire d'enregistrement 
-#                   fixe si aucun offset n'est donné (par défaut c("22:00", "06:00"))
-#   - sun_offsets : liste ou vecteur nommé avec décalages en minutes (before_sunset, after_sunrise) 
-#                   pour calculer dynamiquement la période nocturne selon le coucher et lever du soleil
-#
-# =======================================================================================
+# This implementation intentionally follows batactivity::species_place_activity:
+# solar ephemerides determine the CPH denominator only; they do not discard
+# contacts. Keeping the calculation here dependency-free makes the application
+# usable without installing the package.
 
-BatPassive <- function(data, 
+BatPassive <- function(data,
                        city = "Paris",
-                       record_time = c("22:00", "06:00"), 
-                       sun_offsets = NULL) {
-  
-  library(dplyr)      # 1.1.4
-  library(lubridate)  # 1.9.4
-  library(suncalc)    # 0.5.1
-  library(tibble)     # 3.2.1
-  
-  # Table interne des villes avec coordonnées
-  cities_coords <- tibble(
-    Place = c("Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Brest", "Strasbourg"),
-    Latitude = c(48.8566, 45.7640, 43.2965, 43.6047, 44.8378, 48.3904, 48.5734),
-    Longitude = c(2.3522, 4.8357, 5.3698, 1.4442, -0.5792, -4.4861, 7.7521)
-  )
-  
-  # Vérifier si la ville choisie est dans la table
-  if (!(city %in% cities_coords$Place)) {
-    stop("La ville choisie n'est pas dans la liste des villes supportées (Paris, Lyon, Marseille, Toulouse, Bordeaux, Brest et Strasbourg")
+                       record_time = c("08:00", "22:00"),
+                       sun_offsets = NULL,
+                       timezone = "Europe/Paris") {
+  required_columns <- c("Place", "Id", "Night_Date", "Date_Time")
+  missing_columns <- setdiff(required_columns, names(data))
+  if (!is.data.frame(data) || length(missing_columns) > 0) {
+    stop("data must be a data frame containing: ", paste(required_columns, collapse = ", "), call. = FALSE)
   }
-  
-  # Extraire coordonnées de la ville choisie
-  coords <- filter(cities_coords, Place == city)
-  lat <- coords$Latitude
-  lon <- coords$Longitude
-  
-  # Colonnes temporelles
-  data <- data %>%
-    mutate(
-      Night_Date = as.Date(Night_Date),
-      Date_Time = as.POSIXct(Date_Time, tz = "UTC"),
-      Hour = hour(Date_Time),
-      Minute = minute(Date_Time)
+  if (nrow(data) == 0) stop("data must contain at least one row.", call. = FALSE)
+  if (!is.character(timezone) || length(timezone) != 1 || !timezone %in% OlsonNames()) {
+    stop("timezone must be a valid IANA time zone, such as Europe/Paris.", call. = FALSE)
+  }
+
+  cities <- data.frame(
+    city = c("Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Brest", "Strasbourg"),
+    latitude = c(48.8566, 45.7640, 43.2965, 43.6047, 44.8378, 48.3904, 48.5734),
+    longitude = c(2.3522, 4.8357, 5.3698, 1.4442, -0.5792, -4.4861, 7.7521),
+    stringsAsFactors = FALSE
+  )
+  if (!is.character(city) || length(city) != 1 || !city %in% cities$city) {
+    stop("city must be one of: ", paste(cities$city, collapse = ", "), call. = FALSE)
+  }
+
+  parse_datetime_app <- function(x) {
+    if (inherits(x, "POSIXct")) return(as.POSIXct(x, tz = timezone))
+    values <- trimws(as.character(x))
+    values <- sub("\\s+(UTC|GMT|CEST|CET)$", "", values, ignore.case = TRUE)
+    result <- rep(as.POSIXct(NA, tz = timezone), length(values))
+    numeric_value <- suppressWarnings(as.numeric(gsub(",", ".", values)))
+    numeric_datetime <- is.na(result) & !is.na(numeric_value) & numeric_value > 20000
+    result[numeric_datetime] <- as.POSIXct(
+      (numeric_value[numeric_datetime] - 25569) * 86400,
+      origin = "1970-01-01",
+      tz = timezone
     )
-  
-  # Liste complète des nuits
+    formats <- c(
+      "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+      "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M",
+      "%d-%m-%Y %H:%M:%S", "%d-%m-%Y %H:%M"
+    )
+    for (format in formats) {
+      missing <- is.na(result) & !is.na(values) & values != ""
+      if (!any(missing)) break
+      result[missing] <- as.POSIXct(strptime(values[missing], format = format, tz = timezone))
+    }
+    result
+  }
+
+  data$Night_Date <- as.Date(data$Night_Date)
+  data$Date_Time <- parse_datetime_app(data$Date_Time)
+  if (any(is.na(data$Night_Date)) || any(is.na(data$Date_Time))) {
+    stop("Night_Date or Date_Time contains unparsable values.", call. = FALSE)
+  }
+
   all_nights <- seq(min(data$Night_Date), max(data$Night_Date), by = "day")
-  
-  # Calcul des durées de nuit
-  if (!is.null(sun_offsets)) {
-    times_df <- lapply(all_nights, function(nd) {
-      s1 <- getSunlightTimes(date = nd, lat = lat, lon = lon, keep = "sunset")
-      s2 <- getSunlightTimes(date = nd + 1, lat = lat, lon = lon, keep = "sunrise")
-      start <- s1$sunset - minutes(abs(sun_offsets["before_sunset"]))
-      end <- s2$sunrise + minutes(abs(sun_offsets["after_sunrise"]))
-      tibble(Night_Date = nd, start_time = start, end_time = end,
-             duration_hours = as.numeric(difftime(end, start, units = "hours")))
-    }) %>% bind_rows()
-  } else {
-    # Mode fixe
-    start_time_num <- as.numeric(strptime(record_time[1], format = "%H:%M"))
-    end_time_num <- as.numeric(strptime(record_time[2], format = "%H:%M"))
-    fixed_duration <- ifelse(end_time_num > start_time_num,
-                             (end_time_num - start_time_num) / 3600,
-                             (24 * 3600 - (start_time_num - end_time_num)) / 3600)
-    
-    times_df <- tibble(
+  if (is.null(sun_offsets)) {
+    if (!is.character(record_time) || length(record_time) != 2 ||
+        any(is.na(strptime(record_time, format = "%H:%M", tz = "UTC")))) {
+      stop("record_time must contain two values in HH:MM format.", call. = FALSE)
+    }
+    start_time <- as.POSIXct(paste(all_nights, record_time[[1]]), tz = timezone)
+    end_time <- as.POSIXct(paste(all_nights + 1, record_time[[2]]), tz = timezone)
+    windows <- data.frame(
       Night_Date = all_nights,
-      start_time = as.POSIXct(paste(all_nights, record_time[1]), tz = "UTC"),
-      end_time = as.POSIXct(paste(all_nights + 1, record_time[2]), tz = "UTC"),
-      duration_hours = fixed_duration
+      start_time = start_time,
+      end_time = end_time,
+      duration_hours = as.numeric(difftime(end_time, start_time, units = "hours"))
     )
+  } else {
+    required_offsets <- c("before_sunset", "after_sunrise")
+    if (!is.numeric(sun_offsets) || !all(required_offsets %in% names(sun_offsets)) ||
+        any(is.na(sun_offsets[required_offsets])) || any(sun_offsets[required_offsets] < 0)) {
+      stop("sun_offsets must provide non-negative before_sunset and after_sunrise values in minutes.", call. = FALSE)
+    }
+    if (!requireNamespace("suncalc", quietly = TRUE)) {
+      stop("sun_offsets requires the optional suncalc package.", call. = FALSE)
+    }
+    coordinates <- cities[cities$city == city, , drop = FALSE]
+    windows <- do.call(rbind, lapply(all_nights, function(night) {
+      sunset <- as.POSIXct(
+        suncalc::getSunlightTimes(night, coordinates$latitude, coordinates$longitude, keep = "sunset")$sunset,
+        tz = timezone
+      )
+      sunrise <- as.POSIXct(
+        suncalc::getSunlightTimes(night + 1, coordinates$latitude, coordinates$longitude, keep = "sunrise")$sunrise,
+        tz = timezone
+      )
+      start_time <- sunset - sun_offsets[["before_sunset"]] * 60
+      end_time <- sunrise + sun_offsets[["after_sunrise"]] * 60
+      data.frame(
+        Night_Date = night,
+        start_time = start_time,
+        end_time = end_time,
+        duration_hours = as.numeric(difftime(end_time, start_time, units = "hours"))
+      )
+    }))
   }
-  
-  # Intégrer la durée de nuit à chaque observation
-  data <- data %>%
-    left_join(times_df, by = "Night_Date") %>%
-    filter(Date_Time >= start_time & Date_Time <= end_time)
-  
-  # Heures et minutes positives
-  hour_minute_summary <- data %>%
-    mutate(
-      hour_id = paste(Night_Date, Hour),
-      minute_id = paste(Night_Date, Hour, Minute)
-    ) %>%
-    group_by(Place, Id) %>%
-    summarise(
-      hour_positive = n_distinct(hour_id),
-      minute_positive = n_distinct(minute_id),
-      .groups = "drop"
-    )
-  
-  # Contacts par nuit
-  contacts_per_night <- data %>%
-    group_by(Place, Id, Night_Date) %>%
-    summarise(n_contacts = n(), .groups = "drop")
-  
-  # Grille complète Place x Id x Night_Date
-  full_grid <- expand.grid(
-    Place = unique(data$Place),
-    Id = unique(data$Id),
-    Night_Date = all_nights
+
+  if (is.null(sun_offsets)) {
+    window_index <- match(as.character(data$Night_Date), as.character(windows$Night_Date))
+    data <- data[data$Date_Time >= windows$start_time[window_index] &
+                   data$Date_Time <= windows$end_time[window_index], , drop = FALSE]
+  }
+
+  output_names <- c(
+    "Place", "Id", "contacts", "night_positive", "hour_positive", "minute_positive",
+    "min_CPN", "mean_CPN", "sd_CPN", "max_CPN", "min_CPH", "mean_CPH", "sd_CPH", "max_CPH"
   )
-  
-  # Ajouter les zéros et durées
-  full_data <- full_grid %>%
-    left_join(contacts_per_night, by = c("Place", "Id", "Night_Date")) %>%
-    left_join(times_df, by = "Night_Date") %>%
-    mutate(
-      n_contacts = replace_na(n_contacts, 0),
-      contacts_per_hour = n_contacts / duration_hours
+  if (nrow(data) == 0) {
+    return(as.data.frame(setNames(replicate(length(output_names), numeric(), simplify = FALSE), output_names)))
+  }
+
+  data$Hour <- as.integer(format(data$Date_Time, "%H", tz = timezone))
+  data$Minute <- as.integer(format(data$Date_Time, "%M", tz = timezone))
+  contacts <- stats::aggregate(
+    rep(1L, nrow(data)),
+    list(Place = as.character(data$Place), Id = as.character(data$Id), Night_Date = data$Night_Date),
+    sum
+  )
+  names(contacts)[[4]] <- "n_contacts"
+  full_data <- merge(
+    expand.grid(Place = unique(as.character(data$Place)), Id = unique(as.character(data$Id)),
+                Night_Date = all_nights, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE),
+    contacts, by = c("Place", "Id", "Night_Date"), all.x = TRUE, sort = FALSE
+  )
+  full_data$n_contacts[is.na(full_data$n_contacts)] <- 0L
+  window_index <- match(as.character(full_data$Night_Date), as.character(windows$Night_Date))
+  full_data$contacts_per_hour <- full_data$n_contacts / windows$duration_hours[window_index]
+
+  group_key <- function(place, id) paste(as.character(place), as.character(id), sep = "\r")
+  positive_groups <- split(data, group_key(data$Place, data$Id), drop = TRUE)
+  positives <- do.call(rbind, lapply(positive_groups, function(group) {
+    data.frame(
+      key = group_key(group$Place[[1]], group$Id[[1]]),
+      hour_positive = length(unique(paste(group$Night_Date, group$Hour))),
+      minute_positive = length(unique(paste(group$Night_Date, group$Hour, group$Minute)))
     )
-  
-  # Résumé final
-  results <- full_data %>%
-    group_by(Place, Id) %>%
-    summarise(
-      contacts = sum(n_contacts),
-      night_positive = sum(n_contacts > 0),
-      min_CPN = min(n_contacts),
-      mean_CPN = mean(n_contacts),
-      sd_CPN = sd(n_contacts),
-      max_CPN = max(n_contacts),
-      min_CPH = min(contacts_per_hour),
-      mean_CPH = mean(contacts_per_hour),
-      sd_CPH = sd(contacts_per_hour),
-      max_CPH = max(contacts_per_hour),
-      .groups = "drop"
-    ) %>%
-    left_join(hour_minute_summary, by = c("Place", "Id")) %>%
-    mutate(
-      hour_positive = replace_na(hour_positive, 0),
-      minute_positive = replace_na(minute_positive, 0)
-    ) %>%
-    select(
-      Place, Id,
-      contacts,
-      night_positive,
-      hour_positive,
-      minute_positive,
-      min_CPN,
-      mean_CPN,
-      sd_CPN,
-      max_CPN,
-      min_CPH,
-      mean_CPH,
-      sd_CPH,
-      max_CPH
+  }))
+
+  result_groups <- split(full_data, group_key(full_data$Place, full_data$Id), drop = TRUE)
+  result <- do.call(rbind, lapply(result_groups, function(group) {
+    current_key <- group_key(group$Place[[1]], group$Id[[1]])
+    positive <- positives[positives$key == current_key, , drop = FALSE]
+    data.frame(
+      Place = as.character(group$Place[[1]]), Id = as.character(group$Id[[1]]),
+      contacts = sum(group$n_contacts), night_positive = sum(group$n_contacts > 0),
+      hour_positive = positive$hour_positive[[1]], minute_positive = positive$minute_positive[[1]],
+      min_CPN = min(group$n_contacts), mean_CPN = mean(group$n_contacts),
+      sd_CPN = stats::sd(group$n_contacts), max_CPN = max(group$n_contacts),
+      min_CPH = min(group$contacts_per_hour), mean_CPH = mean(group$contacts_per_hour),
+      sd_CPH = stats::sd(group$contacts_per_hour), max_CPH = max(group$contacts_per_hour),
+      stringsAsFactors = FALSE
     )
-  
-  
-  return(results)
+  }))
+  rownames(result) <- NULL
+  result
 }
