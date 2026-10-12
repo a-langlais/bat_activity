@@ -66,7 +66,6 @@ Analyze passive survey activity by place and species:
 passive_data <- read.csv("data/passive.csv", sep = ";")
 passive_metrics <- species_place_activity(
   passive_data,
-  nights = 1,
   record_time = c("22:00", "06:00")
 )
 ```
@@ -115,6 +114,43 @@ Rscript scripts/02_export_visualisations.R
 
 They use files in `data/` and write generated results to `output/`.
 
+To standardize several exports in a row, pass the software name followed by
+the files to process. Base files ending in `_clean.csv` produce a
+corresponding `_clean_format.csv` file:
+
+```bash
+Rscript scripts/03_standardiser_lot.R SonoChiro data/nuit_1.csv data/nuit_2.csv
+Rscript scripts/03_standardiser_lot.R Tadarida data/nuit_1.csv data/nuit_2.csv
+```
+
+For all base files in one directory, use `--dossier`:
+
+```bash
+Rscript scripts/03_standardiser_lot.R SonoChiro --dossier data
+```
+
+Passive indicators can also be calculated for every standardized table in a
+directory, using the same `BatPassive()` method as the Shiny application:
+
+```bash
+Rscript scripts/04_indicateurs_passifs_lot.R --dossier data
+```
+
+Specify the closest supported city and recording hours when needed:
+
+```bash
+Rscript scripts/04_indicateurs_passifs_lot.R --ville Bordeaux --horaires 21:30 07:00 --dossier data
+```
+
+Recording times and solar ephemerides use French time (`Europe/Paris`) by
+default. Use `--fuseau <IANA_TIMEZONE>` to select another time zone.
+
+Apply detectability coefficients to the resulting passive indicator files:
+
+```bash
+Rscript scripts/05_correction_detectabilite.R --milieu ouvert --dossier data
+```
+
 ## Development
 
 Regenerate package documentation after editing roxygen comments:
@@ -131,6 +167,14 @@ R CMD check --no-manual batactivity_0.0.0.9000.tar.gz
 ```
 
 `--no-manual` is useful on systems without a LaTeX installation.
+
+Run the regression tests directly during development:
+
+```r
+testthat::test_local("batactivity")
+```
+
+The solar-duration tests run when the optional `suncalc` package is installed.
 
 ## License
 
