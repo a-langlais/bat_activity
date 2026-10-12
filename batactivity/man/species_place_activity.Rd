@@ -4,20 +4,38 @@
 \alias{species_place_activity}
 \title{Analyze passive bat activity by place and species}
 \usage{
-species_place_activity(data, nights = 1, record_time = c("22:00", "06:00"))
+species_place_activity(
+  data,
+  city = "Paris",
+  record_time = c("08:00", "22:00"),
+  sun_offsets = NULL,
+  timezone = "Europe/Paris"
+)
 }
 \arguments{
-\item{data}{A standard passive survey data frame.}
+\item{data}{A passive survey data frame with \code{Place}, \code{Id},
+\code{Night_Date}, and \code{Date_Time} columns.}
 
-\item{nights}{Number of recording nights represented by the dataset.}
+\item{city}{Nearest city used when \code{sun_offsets} is provided.}
 
 \item{record_time}{Character vector of recording start and end times in
-\code{HH:MM} format.}
+\code{HH:MM} format, used when \code{sun_offsets} is \code{NULL}.}
+
+\item{sun_offsets}{Optional named numeric vector containing
+\code{before_sunset} and \code{after_sunrise} offsets in minutes. In this
+mode, all contacts are retained; the resulting solar window is used only as
+the denominator of the CPH indicators.}
+
+\item{timezone}{IANA time zone used to interpret recording times and
+ephemerides. Defaults to French time (\code{Europe/Paris}).}
 }
 \value{
 A data frame of passive activity indicators by \code{Place} and \code{Id}.
 }
 \description{
 Computes contact counts, positive nights, positive hours, positive minutes,
-and CPN/CPH summaries for standardized passive survey data.
+and CPN/CPH summaries. Zero-contact nights are included in CPN and CPH
+metrics. With fixed recording hours, contacts outside that window are excluded.
+With solar offsets, ephemerides are used only to calculate each night's CPH
+duration.
 }
