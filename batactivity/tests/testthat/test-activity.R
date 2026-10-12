@@ -33,8 +33,31 @@ test_that("species_place_activity computes passive indicators", {
     stringsAsFactors = FALSE
   )
 
-  result <- species_place_activity(input, nights = 2, record_time = c("22:00", "06:00"))
+  result <- species_place_activity(input, record_time = c("22:00", "06:00"))
 
   expect_equal(nrow(result), 2)
   expect_true(all(c("contacts", "night_positive", "mean_CPH") %in% names(result)))
+  expect_true(all(result$min_CPN == 0))
+  expect_equal(result$hour_positive[result$Id == "Pip"], 1)
+  expect_equal(result$minute_positive[result$Id == "Pip"], 2)
+})
+
+test_that("species_place_activity interprets character dates in the requested time zone", {
+  input <- data.frame(
+    Place = "S1",
+    Id = "Myoalc",
+    Night_Date = as.Date("2026-06-26"),
+    Date_Time = "2026-06-26 04:56:00",
+    stringsAsFactors = FALSE
+  )
+
+  result <- species_place_activity(
+    input,
+    record_time = c("03:00", "08:00"),
+    timezone = "Europe/Paris"
+  )
+
+  expect_equal(result$contacts, 1)
+  expect_equal(result$hour_positive, 1)
+  expect_equal(result$minute_positive, 1)
 })

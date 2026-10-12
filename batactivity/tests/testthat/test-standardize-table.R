@@ -37,3 +37,38 @@ test_that("TableFormatage writes only when output_file is provided", {
   expect_true(file.exists(output_file))
   expect_equal(nrow(result), 1)
 })
+
+test_that("standardize_table reads Tadarida timestamps after variable prefixes", {
+  input <- data.frame(
+    "nom du fichier" = c(
+      "Car791025-2026-Pass1-Z4-GAL-U7_20260625_231344_000",
+      "Car791025-2026-Pass1-Z4-GAL-U7_20260626_001446_000"
+    ),
+    tadarida_taxon = c("Barbar", "Barbar"),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  result <- standardize_table(input, software = "Tadarida")
+
+  expect_equal(result$Place, c("GAL-U7", "GAL-U7"))
+  expect_equal(as.character(result$Date), c("2026-06-25", "2026-06-26"))
+  expect_equal(result$Time, c("23:13", "00:14"))
+  expect_equal(as.character(result$Night_Date[[2]]), "2026-06-25")
+})
+
+test_that("the application uses the same Tadarida standardization as the package", {
+  app_function <- test_path("..", "..", "..", "shiny-app", "R", "Standardize.R")
+  source(app_function, local = TRUE)
+  input <- data.frame(
+    "nom du fichier" = "Car791025-2026-Pass1-Z4-GAL-U7_20260625_231344_000.wav",
+    validateur_taxon = "Pippip",
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  expect_equal(
+    standardize_table_app(input, software = "Tadarida"),
+    standardize_table(input, software = "Tadarida")
+  )
+})
