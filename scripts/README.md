@@ -34,6 +34,27 @@ La chaine produit successivement les fichiers `_clean_format.csv`,
 `_raw_results.csv`, puis `_corrected_results.csv` dans le dossier courant. Elle
 s'arrete immediatement si une etape echoue.
 
+## Executer toute la chaine sous Linux
+
+Le fichier `run_passive_pipeline.sh`, place a la racine du depot, suit le meme
+fonctionnement sous Linux. Depuis un terminal ouvert dans le dossier contenant
+les fichiers `_clean.csv` :
+
+```bash
+bash /chemin/vers/bat_activity/run_passive_pipeline.sh SonoChiro ouvert
+```
+
+Les options du calcul passif peuvent etre ajoutees apres les deux premiers
+arguments :
+
+```bash
+bash /chemin/vers/bat_activity/run_passive_pipeline.sh Tadarida ferme \
+  --ville Bordeaux --ephemerides 30 30
+```
+
+Pour lancer directement le fichier sans prefixe `bash`, le rendre executable
+une fois avec `chmod +x /chemin/vers/bat_activity/run_passive_pipeline.sh`.
+
 ## Standardiser plusieurs fichiers
 
 Depuis la racine du depot, indiquer le logiciel puis la liste des fichiers a
