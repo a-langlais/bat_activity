@@ -10,6 +10,30 @@ Ils sont prevus pour etre lances depuis la racine du depot.
 - `04_indicateurs_passifs_lot.R` calcule les indicateurs passifs pour plusieurs tableaux standardises.
 - `05_correction_detectabilite.R` applique des coefficients de detectabilite aux indicateurs passifs.
 
+## Executer toute la chaine sous Windows
+
+Le fichier `run_passive_pipeline.bat`, place a la racine du depot, execute les
+scripts 03, 04 et 05 successivement. Il utilise comme dossier de donnees le
+dossier courant, qui doit contenir les fichiers sources `_clean.csv`.
+
+Depuis une invite de commandes ouverte dans le dossier des CSV :
+
+```bat
+C:\chemin\vers\bat_activity\run_passive_pipeline.bat SonoChiro ouvert
+```
+
+Le premier argument indique le logiciel (`SonoChiro` ou `Tadarida`) et le
+second le milieu (`ouvert` ou `ferme`). Les arguments suivants sont transmis
+au calcul des indicateurs passifs :
+
+```bat
+C:\chemin\vers\bat_activity\run_passive_pipeline.bat Tadarida ferme --ville Bordeaux --ephemerides 30 30
+```
+
+La chaine produit successivement les fichiers `_clean_format.csv`,
+`_raw_results.csv`, puis `_corrected_results.csv` dans le dossier courant. Elle
+s'arrete immediatement si une etape echoue.
+
 ## Standardiser plusieurs fichiers
 
 Depuis la racine du depot, indiquer le logiciel puis la liste des fichiers a
@@ -78,21 +102,4 @@ indicateurs quantitatifs sont corriges dans un nouveau fichier :
 
 ```bash
 Rscript scripts/05_correction_detectabilite.R --milieu ouvert --dossier data
-```
-
-Chaque nuit_raw_results.csv produit
-nuit_corrected_results.csv. Le fichier corrige conserve
-exactement les memes colonnes. Seuls contacts, les statistiques CPN et les
-statistiques CPH sont multiplies par le coefficient ; les nuits, heures et
-minutes positives restent des effectifs bruts. Si un taxon n'a pas de
-coefficient, le fichier est exporte avec un avertissement et les valeurs de ce
-taxon restent brutes.
-
-Exemple :
-
-```
-cd "C:\Users\langl\Documents\GitHub\bat_activity"
-& "C:\Program Files\R\R-4.4.2\bin\Rscript.exe" scripts\03_standardiser_lot.R Tadarida --dossier "C:\Users\langl\Documents\GitHub\bat_activity\scripts\temp"
-& "C:\Program Files\R\R-4.4.2\bin\Rscript.exe" scripts\04_indicateurs_passifs_lot.R --ville Bordeaux --fuseau Europe/Paris --ephemerides 30 30 --dossier "C:\Users\langl\Documents\GitHub\bat_activity\scripts\temp"
-& "C:\Program Files\R\R-4.4.2\bin\Rscript.exe" scripts\05_correction_detectabilite.R --milieu ferme --dossier "C:\Users\langl\Documents\GitHub\bat_activity\scripts\temp"
 ```
